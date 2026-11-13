@@ -3455,5 +3455,156 @@ window.addEventListener('load', function() {
     window.renderApp();
 })();
 </script>
+<style>
+    /* Делаем карточки слегка полупрозрачными, чтобы крест мягко просвечивал сквозь них */
+    .panel {
+        position: relative;
+        z-index: 1;
+        background: rgba(255, 255, 255, 0.90) !important;
+        backdrop-filter: blur(4px);
+    }
+
+    /* Полупрозрачный медицинский плюсик строго по центру экрана */
+    .bg-med-cross {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 340px;
+        height: 340px;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.14;
+    }
+
+    .bg-med-cross::before,
+    .bg-med-cross::after {
+        content: "";
+        position: absolute;
+        background: linear-gradient(135deg, #0ea5e9, #10b981);
+        border-radius: 28px;
+    }
+
+    /* Вертикальная перекладина креста */
+    .bg-med-cross::before {
+        top: 0;
+        left: 115px;
+        width: 110px;
+        height: 340px;
+    }
+
+    /* Горизонтальная перекладина креста */
+    .bg-med-cross::after {
+        top: 115px;
+        left: 0;
+        width: 340px;
+        height: 110px;
+    }
+
+    @media (max-width: 768px) {
+        .bg-med-cross {
+            width: 240px;
+            height: 240px;
+        }
+        .bg-med-cross::before {
+            left: 80px;
+            width: 80px;
+            height: 240px;
+        }
+        .bg-med-cross::after {
+            top: 80px;
+            width: 240px;
+            height: 80px;
+        }
+    }
+</style>
+
+<div class="bg-med-cross"></div>
+<style>
+    /* Приятный мягкий фон всей страницы вместо плоского серо-белого */
+    body {
+        background: linear-gradient(135deg, #e0f2fe 0%, #f0fdfa 50%, #e2e8f0 100%) !important;
+        background-attachment: fixed !important;
+    }
+
+    /* Делаем панели контрастнее, чтобы не сливались с фоном */
+    .panel {
+        background: rgba(255, 255, 255, 0.96) !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    /* Чиним работу кнопок А- и А+ на телефонах (привязываем всё к --scale) */
+    @media (max-width: 768px) {
+        .logo {
+            font-size: calc(20px * var(--scale)) !important;
+        }
+        .ctrl-btn {
+            font-size: calc(14px * var(--scale)) !important;
+        }
+        .mob-tab-btn {
+            font-size: calc(15px * var(--scale)) !important;
+        }
+        .search-input {
+            font-size: calc(16px * var(--scale)) !important;
+        }
+        .chip-btn {
+            font-size: calc(14px * var(--scale)) !important;
+        }
+        .list-divider {
+            font-size: calc(13px * var(--scale)) !important;
+        }
+        .med-btn {
+            font-size: calc(16px * var(--scale)) !important;
+        }
+        .tag {
+            font-size: calc(11px * var(--scale)) !important;
+        }
+        .back-to-list-btn {
+            font-size: calc(15px * var(--scale)) !important;
+        }
+        h2 {
+            font-size: calc(22px * var(--scale)) !important;
+        }
+        .subtitle {
+            font-size: calc(14px * var(--scale)) !important;
+        }
+        .section-label {
+            font-size: calc(14px * var(--scale)) !important;
+        }
+        .section-text {
+            font-size: calc(17px * var(--scale)) !important;
+        }
+        .triage-alert, .symptom-banner {
+            font-size: calc(14px * var(--scale)) !important;
+        }
+        .disclaimer {
+            font-size: calc(13px * var(--scale)) !important;
+        }
+    }
+</style>
+
+<script>
+(function() {
+    // Гарантируем, что кнопки А- и А+ всегда работают при клике
+    let currentZoom = 1.0;
+    const allCtrlBtns = document.querySelectorAll('.ctrl-btn');
+    allCtrlBtns.forEach(btn => {
+        const txt = btn.textContent.trim();
+        if (txt === 'А-' || txt === 'A-') {
+            btn.onclick = function() {
+                currentZoom = Math.max(0.8, +(currentZoom - 0.1).toFixed(2));
+                document.documentElement.style.setProperty('--scale', currentZoom);
+            };
+        } else if (txt === 'А+' || txt === 'A+') {
+            btn.onclick = function() {
+                currentZoom = Math.min(1.45, +(currentZoom + 0.1).toFixed(2));
+                document.documentElement.style.setProperty('--scale', currentZoom);
+            };
+        }
+    });
+})();
+</script>
 </body>
 </html>
+
