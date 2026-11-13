@@ -1,0 +1,3459 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>МедГид — Доступные инструкции к лекарствам</title>
+    <style>
+        :root {
+            --scale: 1;
+            --primary: #0b5ed7;
+            --primary-dark: #084298;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #eef2f6;
+            color: #111827;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            line-height: 1.5;
+        }
+        .layout {
+            max-width: 980px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 768px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .panel {
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 24px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+        }
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 3px solid #e2e8f0;
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+        }
+        .logo {
+            font-size: calc(23px * var(--scale));
+            font-weight: 900;
+            color: var(--primary);
+            margin: 0;
+        }
+        .controls {
+            display: flex;
+            gap: 6px;
+        }
+        .ctrl-btn {
+            padding: 8px 12px;
+            font-size: calc(15px * var(--scale));
+            font-weight: 800;
+            border: 2px solid var(--primary);
+            background: #ffffff;
+            color: var(--primary);
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .ctrl-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+        }
+        .search-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: calc(17px * var(--scale));
+            border: 3px solid #cbd5e1;
+            border-radius: 12px;
+            margin-bottom: 14px;
+            font-weight: 600;
+            outline: none;
+        }
+        .search-input:focus {
+            border-color: var(--primary);
+        }
+        .med-list {
+            display: grid;
+            gap: 10px;
+            max-height: 440px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .med-btn {
+            padding: 14px 16px;
+            font-size: calc(17px * var(--scale));
+            font-weight: 800;
+            background: #eff6ff;
+            border: 2px solid #bfdbfe;
+            border-radius: 14px;
+            color: var(--primary-dark);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+            transition: 0.15s;
+        }
+        .med-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+        .tag {
+            font-size: calc(12px * var(--scale));
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #ffffff;
+            color: var(--primary-dark);
+            white-space: nowrap;
+            margin-left: 8px;
+            font-weight: 800;
+        }
+        h2 {
+            font-size: calc(26px * var(--scale));
+            margin: 0 0 6px 0;
+            color: #0f172a;
+        }
+        .subtitle {
+            font-size: calc(15px * var(--scale));
+            color: #64748b;
+            font-weight: 700;
+            margin: 0 0 18px 0;
+        }
+        .section-card {
+            background: #f8fafc;
+            padding: 18px;
+            border-radius: 16px;
+            border: 2px solid #e2e8f0;
+            margin-bottom: 16px;
+        }
+        .section-card.dosage {
+            background: #fefce8;
+            border-color: #fde047;
+        }
+        .section-label {
+            font-size: calc(15px * var(--scale));
+            text-transform: uppercase;
+            color: var(--primary);
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+        .section-card.dosage .section-label {
+            color: #854d0e;
+        }
+        .section-text {
+            font-size: calc(19px * var(--scale));
+            margin: 0;
+            font-weight: 500;
+            color: #1e293b;
+        }
+        .disclaimer {
+            text-align: center;
+            font-size: calc(13px * var(--scale));
+            color: #64748b;
+            margin-top: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    <div class="panel">
+        <div class="top-bar">
+            <h1 class="logo" id="ui-title">🩺 МедГид</h1>
+            <div class="controls">
+                <button class="ctrl-btn" onclick="changeFont(-0.1)">А-</button>
+                <button class="ctrl-btn" onclick="changeFont(0.1)">А+</button>
+                <button class="ctrl-btn active" id="btn-ru" onclick="setLang('ru')">RU</button>
+                <button class="ctrl-btn" id="btn-en" onclick="setLang('en')">EN</button>
+            </div>
+        </div>
+        <input type="text" class="search-input" id="search-box" oninput="handleSearch()" placeholder="🔍 Введите препарат или вопрос (как пить ношпу)...">
+        <div class="med-list" id="med-list"></div>
+    </div>
+
+    <div class="panel">
+        <h2 id="med-name"></h2>
+        <p class="subtitle" id="med-sub"></p>
+
+        <div class="section-card">
+            <div class="section-label" id="lbl-info">📘 Доступная инструкция</div>
+            <p class="section-text" id="txt-info"></p>
+        </div>
+
+        <div class="section-card dosage">
+            <div class="section-label" id="lbl-how">💊 Как правильно пить</div>
+            <p class="section-text" id="txt-how"></p>
+        </div>
+
+        <div class="disclaimer" id="ui-disc">
+            Информационный справочник. Перед применением проконсультируйтесь с врачом.
+        </div>
+    </div>
+</div>
+<script>
+    let currentLang = 'ru';
+    let selectedIdx = 0;
+    let fontScale = 1.0;
+
+    const uiText = {
+        ru: {
+            title: "🩺 МедГид",
+            search: "🔍 Поиск препарата или вопроса (ношпа, смекта, давление)...",
+            infoLabel: "📘 Доступная инструкция",
+            howLabel: "💊 Как правильно пить",
+            disc: "Информационный справочник. Перед применением проконсультируйтесь с врачом."
+        },
+        en: {
+            title: "🩺 MedGuide",
+            search: "🔍 Search medicine or question (No-Spa, Smecta, fever)...",
+            infoLabel: "📘 Simple Instruction",
+            howLabel: "💊 How to take properly",
+            disc: "Informational guide. Consult a doctor before use."
+        }
+    };
+
+    const medicines = [
+        {
+            keys: "валидол сердце волнение укачивание",
+            ru: {
+                tag: "👴 Пенсионерам",
+                name: "Валидол (таблетки 60 мг)",
+                sub: "Сердечное и успокоительное средство",
+                info: "Помогает при лёгкой боли или покалывании в области сердца, сильном волнении, стрессе и укачивании в транспорте. Если через 10 минут боль не проходит — срочно звоните в скорую по номеру 103.",
+                how: "Возьмите 1 таблетку и положите под язык. Держите, пока сама полностью не растает. Глотать целиком и запивать водой НЕ нужно."
+            },
+            en: {
+                tag: "👴 Seniors",
+                name: "Validol (60 mg tablets)",
+                sub: "Mild heart and stress relief",
+                info: "Helps with mild chest discomfort, stress, and motion sickness. Call 103 if pain lasts over 10 minutes.",
+                how: "Put 1 tablet under your tongue until it melts completely. Do not swallow whole or drink water."
+            }
+        },
+        {
+            keys: "нурофен детский ребенок температура жар ухо зубы сироп",
+            ru: {
+                tag: "👶 Детям",
+                name: "Нурофен детский (суспензия)",
+                sub: "Жаропонижающее и обезболивающее для детей",
+                info: "Быстро сбивает высокую температуру при простуде и после прививок, снимает боль при прорезывании зубов и боль в ухе. Нельзя малышам младше 3 месяцев.",
+                how: "Взболтать флакон и отмерить шприцем строго по весу ребёнка: на 10 кг — 5 мл, на 15 кг — 7,5 мл. Давать только после еды, не чаще 3 раз в день с перерывом 6 часов."
+            },
+            en: {
+                tag: "👶 Kids",
+                name: "Nurofen for Children (syrup)",
+                sub: "Fever and pain relief for kids",
+                info: "Lowers high fever and relieves teething or ear pain. Do not give to babies under 3 months.",
+                how: "Shake well and dose by weight using the syringe: 5 ml for 10 kg, 7.5 ml for 15 kg. Give after meals, up to 3 times a day every 6 hours."
+            }
+        },
+        {
+            keys: "парацетамол температура простуда голова зуб боль",
+            ru: {
+                tag: "👨‍👩‍👧‍👦 Всем",
+                name: "Парацетамол (500 мг)",
+                sub: "Базовое жаропонижающее и обезболивающее",
+                info: "Сбивает температуру при простуде и гриппе, помогает от головной и зубной боли. Нельзя совмещать с порошками от простуды (Терафлю и др.) из-за риска передозировки.",
+                how: "Взрослым и детям старше 12 лет: по 1 таблетке после еды, запивая стаканом воды. Пить не чаще чем раз в 4 часа, максимум 4 таблетки в сутки."
+            },
+            en: {
+                tag: "👨‍👩‍👧‍👦 Everyone",
+                name: "Paracetamol (500 mg)",
+                sub: "Basic fever reducer and painkiller",
+                info: "Lowers fever during colds and stops headache or toothache. Do not mix with cold-relief powders.",
+                how: "Over 12 years: 1 tablet after meal with a glass of water. Wait at least 4 hours, max 4 tablets a day."
+            }
+        },
+        {
+            keys: "ношпа но-шпа дротаверин спазм живот колика",
+            ru: {
+                tag: "😣 Спазмы",
+                name: "Но-шпа (Дротаверин 40 мг)",
+                sub: "Спазмолитик",
+                info: "Снимает спазмы и тянущую боль в животе, желудке, кишечнике и при почечной колике. Противопоказана детям до 6 лет и при тяжёлых болезнях печени и почек.",
+                how: "Взрослым: по 1–2 таблетки 2–3 раза в день, запивая водой. Максимальная суточная доза — 6 таблеток."
+            },
+            en: {
+                tag: "😣 Spasms",
+                name: "No-Spa (40 mg)",
+                sub: "Antispasmodic",
+                info: "Relieves stomach spasms and abdominal cramps. Not for children under 6.",
+                how: "Adults: 1–2 tablets 2–3 times daily with water. Max 6 tablets per day."
+            }
+        },
+        {
+            keys: "цитрамон голова мигрень давление",
+            ru: {
+                tag: "💊 От головы",
+                name: "Цитрамон П",
+                sub: "Обезболивающее средство",
+                info: "Помогает от головной боли, мигрени и зубной боли. Содержит кофеин (может повышать давление). Нельзя детям до 15 лет и при язве желудка.",
+                how: "Взрослым: по 1 таблетке 2–3 раза в день строго после еды, запивая водой. Не более 6 таблеток в сутки."
+            },
+            en: {
+                tag: "💊 Headache",
+                name: "Citramon P",
+                sub: "Pain reliever",
+                info: "Relieves headache and migraine. Contains caffeine. Not for children under 15.",
+                how: "Adults: 1 tablet 2–3 times daily after meals with water."
+            }
+        },
+        {
+            keys: "смекта отравление диарея понос живот изжога",
+            ru: {
+                tag: "🤢 Желудок",
+                name: "Смекта (порошок)",
+                sub: "Природный сорбент",
+                info: "Помогает при пищевом отравлении, диарее, вздутии живота и изжоге у взрослых и детей.",
+                how: "Содержимое 1 пакетика размешать в полстакана тёплой воды. Взрослым — по 1 пакетику 3 раза в день. Пить с перерывом минимум 2 часа от других таблеток."
+            },
+            en: {
+                tag: "🤢 Stomach",
+                name: "Smecta (powder)",
+                sub: "Digestive relief",
+                info: "Helps with food poisoning, diarrhea, and heartburn.",
+                how: "Dissolve 1 sachet in half a glass of warm water, 3 times a day. Keep a 2-hour gap from other pills."
+            }
+        },
+        {
+            keys: "супрастин аллергия зуд сыпь отек",
+            ru: {
+                tag: "🤧 Аллергия",
+                name: "Супрастин (25 мг)",
+                sub: "Противоаллергическое средство",
+                info: "Снимает аллергию, кожный зуд, крапивницу, отёк и насморк. Вызывает сильную сонливость — после приёма нельзя садиться за руль.",
+                how: "Взрослым: по 1 таблетке 3–4 раза в день во время еды, запивая водой."
+            },
+            en: {
+                tag: "🤧 Allergy",
+                name: "Suprastin (25 mg)",
+                sub: "Antihistamine",
+                info: "Treats allergy, itching, and hives. Causes drowsiness — do not drive.",
+                how: "Adults: 1 tablet 3–4 times daily with meals."
+            }
+        },
+        {
+            keys: "ибупрофен боль жар температура голова зуб",
+            ru: {
+                tag: "🌡 Боль и жар",
+                name: "Ибупрофен (200 мг)",
+                sub: "Противовоспалительное и обезболивающее",
+                info: "Снимает головную, зубную, мышечную боль, боль в суставах и сбивает высокую температуру. Противопоказан при язве желудка и гастрите.",
+                how: "Взрослым: по 1–2 таблетки строго после еды (не на голодный желудок!), запивая водой, до 3 раз в сутки."
+            },
+            en: {
+                tag: "🌡 Pain & Fever",
+                name: "Ibuprofen (200 mg)",
+                sub: "Anti-inflammatory painkiller",
+                info: "Relieves pain and lowers fever. Avoid with stomach ulcers.",
+                how: "Adults: 1–2 tablets after meals with water, up to 3 times a day."
+            }
+        },
+        {
+            keys: "омепразол омез изжога гастрит язва желудок",
+            ru: {
+                tag: "🔥 Изжога",
+                name: "Омепразол (20 мг)",
+                sub: "Защита слизистой желудка",
+                info: "Убирает изжогу, кислую отрыжку и защищает желудок при гастрите и язве.",
+                how: "По 1 капсуле утром за 30 минут до завтрака, запивая водой. Капсулу глотать целиком, не разжёвывая."
+            },
+            en: {
+                tag: "🔥 Heartburn",
+                name: "Omeprazole (20 mg)",
+                sub: "Stomach protection",
+                info: "Treats heartburn and gastritis.",
+                how: "1 capsule 30 minutes before breakfast with water. Swallow whole."
+            }
+        },
+        {
+            keys: "уголь активированный отравление живот вздутие",
+            ru: {
+                tag: "🖤 Отравление",
+                name: "Активированный уголь",
+                sub: "Сорбент при интоксикации",
+                info: "Впитывает токсины при пищевом отравлении, вздутии и расстройстве желудка.",
+                how: "Из расчёта 1 таблетка на каждые 10 кг веса человека, запить большим стаканом воды. Пить отдельно от других лекарств (интервал минимум 2 часа)."
+            },
+            en: {
+                tag: "🖤 Poisoning",
+                name: "Activated Charcoal",
+                sub: "Detox sorbent",
+                info: "Absorbs toxins during food poisoning and bloating.",
+                how: "1 tablet per 10 kg of body weight with a large glass of water. Keep a 2-hour gap from other pills."
+            }
+        },
+        {
+            keys: "лоратадин кларитин аллергия насморк",
+            ru: {
+                tag: "🤧 Без сонливости",
+                name: "Лоратадин (10 мг)",
+                sub: "Антигистаминное нового поколения",
+                info: "Помогает от сезонной аллергии, чихания, зуда глаз и сыпи без сонливости. Нельзя детям младше 3 лет.",
+                how: "Взрослым и детям старше 12 лет: всего 1 таблетка 1 раз в сутки, независимо от еды."
+            },
+            en: {
+                tag: "🤧 Non-drowsy",
+                name: "Loratadine (10 mg)",
+                sub: "Allergy relief",
+                info: "Treats seasonal allergies without drowsiness. Not for children under 3.",
+                how: "Adults and teens over 12: just 1 tablet once a day."
+            }
+        },
+        {
+            keys: "мезим панкреатин пищеварение тяжесть еда",
+            ru: {
+                tag: "🍽 Пищеварение",
+                name: "Мезим Форте / Панкреатин",
+                sub: "Пищеварительные ферменты",
+                info: "Помогает переваривать жирную и тяжёлую пищу, убирает чувство тяжести после переедания. Нельзя при остром панкреатите.",
+                how: "По 1–2 таблетки прямо перед едой или во время еды, запивая водой, не разжёвывая."
+            },
+            en: {
+                tag: "🍽 Digestion",
+                name: "Mezim / Pancreatin",
+                sub: "Digestive enzymes",
+                info: "Helps digest heavy meals. Contraindicated in acute pancreatitis.",
+                how: "1–2 tablets before or during meals with water. Do not chew."
+            }
+        },
+        {
+            keys: "глицин стресс нервы сон память",
+            ru: {
+                tag: "🧠 Спокойствие",
+                name: "Глицин (100 мг)",
+                sub: "Мягкое успокоительное и ноотроп",
+                info: "Снижает стресс и умственное напряжение, улучшает сон и концентрацию. Безопасен для школьников, студентов и пожилых.",
+                how: "По 1 таблетке 2–3 раза в день положить под язык до полного рассасывания. При бессоннице — за 20 минут до сна."
+            },
+            en: {
+                tag: "🧠 Calmness",
+                name: "Glycine (100 mg)",
+                sub: "Mild calming amino acid",
+                info: "Reduces stress and improves sleep. Safe for students and seniors.",
+                how: "1 tablet under the tongue 2–3 times daily. For sleep, take 20 minutes before bed."
+            }
+        },
+        {
+            keys: "корвалол сердце тревога сон",
+            ru: {
+                tag: "💓 Сердце и сон",
+                name: "Корвалол (таблетки)",
+                sub: "Успокоительное средство",
+                info: "Успокаивает при сильном стрессе, тревоге, учащённом сердцебиении и бессоннице. Содержит фенобарбитал — замедляет реакцию, нельзя садиться за руль.",
+                how: "По 1–2 таблетки 2 раза в день до еды, запивая водой (или под язык для более быстрого эффекта)."
+            },
+            en: {
+                tag: "💓 Heart & Sleep",
+                name: "Corvalol (tablets)",
+                sub: "Sedative",
+                info: "Calms stress, anxiety, and rapid heartbeat. Slows reaction time — do not drive.",
+                how: "1–2 tablets twice daily before meals with water."
+            }
+        },
+        {
+            keys: "аспирин кровь температура жар",
+            ru: {
+                tag: "🩸 Жар и кровь",
+                name: "Аспирин (500 мг)",
+                sub: "Жаропонижающее и антиагрегант",
+                info: "Снижает температуру и разжижает кровь. Категорически нельзя давать детям до 15 лет при вирусной простуде и гриппе!",
+                how: "От температуры: по 1 таблетке (500 мг) строго после еды, запивая стаканом воды. Кардио-дозировку (75–100 мг) назначает только врач."
+            },
+            en: {
+                tag: "🩸 Fever",
+                name: "Aspirin (500 mg)",
+                sub: "Fever reducer",
+                info: "Lowers fever and thins blood. Never give to children under 15 with flu!",
+                how: "500 mg after meals with water for fever."
+            }
+        }
+    ];
+
+    function normalizeText(str) {
+        return str.toLowerCase().replace(/ё/g, 'е').replace(/[^а-яa-z0-9\s]/g, '');
+    }
+
+    function handleSearch() {
+        const query = normalizeText(document.getElementById('search-box').value).trim();
+        if (query.length >= 3) {
+            const words = query.split(/\s+/).filter(w => w.length >= 3);
+            const foundIndex = medicines.findIndex(item => {
+                const haystack = normalizeText(item[currentLang].name + ' ' + item.keys);
+                return words.some(w => haystack.includes(w.slice(0, Math.max(4, w.length - 1))));
+            });
+            if (foundIndex !== -1) {
+                selectedIdx = foundIndex;
+            }
+        }
+        renderApp();
+    }
+
+    function changeFont(delta) {
+        fontScale = Math.min(1.4, Math.max(0.85, fontScale + delta));
+        document.documentElement.style.setProperty('--scale', fontScale);
+    }
+
+    function setLang(lang) {
+        currentLang = lang;
+        renderApp();
+    }
+
+    function renderApp() {
+        const u = uiText[currentLang];
+        const currentMed = medicines[selectedIdx][currentLang];
+        const query = normalizeText(document.getElementById('search-box').value).trim();
+        const words = query.split(/\s+/).filter(w => w.length >= 3);
+        const listBox = document.getElementById('med-list');
+
+        document.getElementById('ui-title').textContent = u.title;
+        document.getElementById('search-box').placeholder = u.search;
+        document.getElementById('lbl-info').textContent = u.infoLabel;
+        document.getElementById('lbl-how').textContent = u.howLabel;
+        document.getElementById('ui-disc').textContent = u.disc;
+
+        document.getElementById('med-name').textContent = currentMed.name;
+        document.getElementById('med-sub').textContent = currentMed.sub;
+        document.getElementById('txt-info').textContent = currentMed.info;
+        document.getElementById('txt-how').textContent = currentMed.how;
+
+        document.getElementById('btn-ru').className = 'ctrl-btn' + (currentLang === 'ru' ? ' active' : '');
+        document.getElementById('btn-en').className = 'ctrl-btn' + (currentLang === 'en' ? ' active' : '');
+
+        listBox.innerHTML = '';
+        medicines.forEach((item, index) => {
+            const data = item[currentLang];
+            const haystack = normalizeText(data.name + ' ' + item.keys);
+            const isMatch = !query || haystack.includes(query) || words.some(w => haystack.includes(w.slice(0, Math.max(4, w.length - 1))));
+
+            if (isMatch) {
+                const btn = document.createElement('button');
+                btn.className = 'med-btn' + (index === selectedIdx ? ' active' : '');
+                btn.innerHTML = `<span>${data.name}</span><span class="tag">${data.tag}</span>`;
+                btn.onclick = () => {
+                    selectedIdx = index;
+                    renderApp();
+                };
+                listBox.appendChild(btn);
+            }
+        });
+    }
+
+    renderApp();
+</script>
+<script>
+const extraMeds = [
+    {
+        keys: "анальгин метамизол боль зуб голова жар",
+        ru: {
+            tag: "💊 Боль",
+            name: "Анальгин (500 мг)",
+            sub: "Обезболивающее и жаропонижающее",
+            info: "Снимает сильную зубную, головную и мышечную боль. Нельзя при болезнях крови, почек и детям до 15 лет.",
+            how: "Взрослым: по 1 таблетке 2–3 раза в день после еды, запивая водой. Не принимать дольше 3 дней без врача."
+        },
+        en: {
+            tag: "💊 Pain",
+            name: "Analgin (Metamizole 500 mg)",
+            sub: "Pain reliever",
+            info: "Relieves strong toothache and headache. Not for children under 15.",
+            how: "Adults: 1 tablet 2–3 times daily after meals with water."
+        }
+    },
+    {
+        keys: "кеторол кеторолак зуб боль травма",
+        ru: {
+            tag: "⚡ Сильная боль",
+            name: "Кеторол (10 мг)",
+            sub: "Мощное обезболивающее",
+            info: "Помогает при острой зубной боли, травмах и боли после операций. Противопоказан при язве желудка и беременным.",
+            how: "Взрослым: по 1 таблетке каждые 6 часов после еды, запивая водой. Максимум 4 таблетки в сутки, курс не более 5 дней."
+        },
+        en: {
+            tag: "⚡ Strong Pain",
+            name: "Ketorol (10 mg)",
+            sub: "Strong painkiller",
+            info: "For acute toothache and injury pain. Avoid with stomach ulcers.",
+            how: "Adults: 1 tablet every 6 hours after meals. Max 4 tablets daily for up to 5 days."
+        }
+    },
+    {
+        keys: "найз нимесулид спина суставы зуб боль жар",
+        ru: {
+            tag: "🦴 Суставы и боль",
+            name: "Найз / Нимесулид (100 мг)",
+            sub: "Противовоспалительное и обезболивающее",
+            info: "Снимает боль в спине, суставах, зубную боль и воспаление. Нельзя детям до 12 лет и при болезнях печени и желудка.",
+            how: "Взрослым: по 1 таблетке (100 мг) 2 раза в день строго после еды, запивая стаканом воды."
+        },
+        en: {
+            tag: "🦴 Joints & Pain",
+            name: "Nise / Nimesulide (100 mg)",
+            sub: "Anti-inflammatory",
+            info: "Relieves back, joint, and tooth pain. Not for children under 12.",
+            how: "Adults: 1 tablet twice daily strictly after meals with water."
+        }
+    },
+    {
+        keys: "терафлю колдрекс фервекс простуда грипп температура порошок",
+        ru: {
+            tag: "🤧 Простуда",
+            name: "Терафлю / Колдрекс (порошок)",
+            sub: "Комплекс от простуды и гриппа",
+            info: "Сбивает температуру, убирает озноб, ломоту в теле и заложенность носа. Содержит парацетамол — нельзя мешать с таблетками Парацетамола!",
+            how: "Растворить 1 пакетик в стакане горячей (не кипящей!) воды. Пить каждые 4–6 часов, не более 3–4 пакетиков в сутки."
+        },
+        en: {
+            tag: "🤧 Cold & Flu",
+            name: "Theraflu / Coldrex (powder)",
+            sub: "Cold and flu relief",
+            info: "Reduces fever, chills, and nasal congestion. Contains paracetamol — do not combine with Paracetamol pills!",
+            how: "Dissolve 1 packet in a glass of hot water every 4–6 hours. Max 3–4 packets daily."
+        }
+    },
+    {
+        keys: "стрепсилс гексорал лизобакт горло боль ангина",
+        ru: {
+            tag: "🗣 Боль в горле",
+            name: "Лизобакт / Стрепсилс",
+            sub: "Антисептик для горла",
+            info: "Убивает микробы и смягчает першение и боль при фарингите, ангине и простуде.",
+            how: "Медленно рассасывать во рту по 1–2 таблетки 3–4 раза в день. После рассасывания не есть и не пить 30 минут."
+        },
+        en: {
+            tag: "🗣 Sore Throat",
+            name: "Lysobact / Strepsils",
+            sub: "Throat antiseptic",
+            info: "Soothes sore throat and fights bacteria.",
+            how: "Slowly dissolve 1–2 lozenges in mouth 3–4 times daily. Do not eat or drink for 30 minutes after."
+        }
+    },
+    {
+        keys: "ацц флуимуцил кашель мокрота бронхит",
+        ru: {
+            tag: "🫁 Влажный кашель",
+            name: "АЦЦ Лонг (600 мг)",
+            sub: "Муколитик для отхождения мокроты",
+            info: "Разжижает густую мокроту и очищает бронхи при кашле. Нельзя при язве желудка и детям до 14 лет (для дозы 600 мг).",
+            how: "Растворить 1 шипучую таблетку в стакане воды и выпить после еды 1 раз в день утром. Не пить перед сном!"
+        },
+        en: {
+            tag: "🫁 Wet Cough",
+            name: "ACC Long (600 mg)",
+            sub: "Mucolytic cough relief",
+            info: "Thins mucus in bronchitis. Not for children under 14.",
+            how: "Dissolve 1 effervescent tablet in a glass of water once daily after breakfast. Avoid before bedtime."
+        }
+    },
+    {
+        keys: "синекод омнитус сухой кашель приступ",
+        ru: {
+            tag: "🌬 Сухой кашель",
+            name: "Синекод / Омнитус",
+            sub: "Противокашлевое средство",
+            info: "Успокаивает изнуряющий сухой кашель без мокроты (например, при коклюше или трахеите). Категорически нельзя пить вместе с АЦЦ и Лазолваном!",
+            how: "Взрослым: по 1 таблетке (или 15 мл сиропа) 2–3 раза в день перед едой."
+        },
+        en: {
+            tag: "🌬 Dry Cough",
+            name: "Sinecod / Omnitus",
+            sub: "Cough suppressant",
+            info: "Calms dry, non-productive cough. Never mix with mucus-thinning drugs like ACC!",
+            how: "Adults: 1 tablet 2–3 times daily before meals."
+        }
+    },
+    {
+        keys: "аквалор аквамарис нос промывание насморк море",
+        ru: {
+            tag: "🌊 Нос и гигиена",
+            name: "Аква Марис / Аквалор",
+            sub: "Стерильная морская вода",
+            info: "Промывает нос от вирусов, пыли и аллергенов, увлажняет слизистую. Безопасен для младенцев, беременных и пенсионеров.",
+            how: "По 1–2 впрыскивания в каждую ноздрю 3–4 раза в день перед выходом на улицу или перед закапыванием других капель."
+        },
+        en: {
+            tag: "🌊 Nasal Care",
+            name: "Aqua Maris / Aqualor",
+            sub: "Sterile sea water spray",
+            info: "Rinses viruses and allergens from the nose. Safe for babies and seniors.",
+            how: "1–2 sprays per nostril 3–4 times daily."
+        }
+    },
+    {
+        keys: "полисорб энтеросгель отравление аллергия похмелье",
+        ru: {
+            tag: "🛡 Сорбент",
+            name: "Полисорб / Энтеросгель",
+            sub: "Мощный энтеросорбент",
+            info: "Собирает и выводит токсины, аллергены и бактерии при отравлении, ротавирусе и пищевой аллергии.",
+            how: "Размешать 1 столовую ложку с горкой в половине стакана воды. Пить 3 раза в день за 1 час до или через 2 часа после еды и других таблеток."
+        },
+        en: {
+            tag: "🛡 Detox",
+            name: "Polysorb / Enterosgel",
+            sub: "Strong enterosorbent",
+            info: "Removes toxins and allergens in food poisoning.",
+            how: "Mix 1 tablespoon in half a glass of water 3 times daily, 2 hours apart from other pills."
+        }
+    },
+    {
+        keys: "регидрон обезвоживание рвота понос температура",
+        ru: {
+            tag: "💧 Водный баланс",
+            name: "Регидрон (порошок)",
+            sub: "Восстановление солей и жидкости",
+            info: "Спасает от обезвоживания при сильной рвоте, диарее и высокой температуре у детей и взрослых.",
+            how: "Растворить 1 пакетик в 1 литре кипячёной тёплой воды. Пить маленькими глотками каждые 10–15 минут в течение дня."
+        },
+        en: {
+            tag: "💧 Hydration",
+            name: "Rehydron (powder)",
+            sub: "Electrolyte replacement",
+            info: "Prevents dehydration during vomiting, diarrhea, and fever.",
+            how: "Dissolve 1 packet in 1 liter of warm water. Sip slowly throughout the day."
+        }
+    },
+    {
+        keys: "линекс бифиформ пробиотик кишечник антибиотик",
+        ru: {
+            tag: "🦠 Микрофлора",
+            name: "Линекс / Бифиформ",
+            sub: "Пробиотик для кишечника",
+            info: "Восстанавливает полезную микрофлору кишечника после приёма антибиотиков и при вздутии.",
+            how: "По 1–2 капсулы 2–3 раза в день во время еды, запивая водой (не горячей!)."
+        },
+        en: {
+            tag: "🦠 Gut Flora",
+            name: "Linex / Bifiform",
+            sub: "Probiotic supplement",
+            info: "Restores gut flora after antibiotics.",
+            how: "1–2 capsules 2–3 times daily with meals and cool water."
+        }
+    },
+    {
+        keys: "алмагель фосфалюгель изжога желудок гастрит боль",
+        ru: {
+            tag: "🥛 Обволакивающее",
+            name: "Фосфалюгель / Алмагель",
+            sub: "Антацид от изжоги и боли в желудке",
+            info: "Обволакивает стенки желудка, быстро снимает жжение, изжогу и голодную боль при гастрите.",
+            how: "Размять пакетик пальцами и выпить 1–2 пакетика при изжоге или через 40 минут после еды. Не запивать водой 15 минут."
+        },
+        en: {
+            tag: "🥛 Stomach Relief",
+            name: "Phosphalugel / Almagel",
+            sub: "Antacid gel",
+            info: "Coats the stomach lining and stops heartburn quickly.",
+            how: "Take 1–2 packets when heartburn occurs. Do not drink water for 15 minutes."
+        }
+    },
+    {
+        keys: "фенистил супрастинекс аллергия зуд укус комар",
+        ru: {
+            tag: "🦟 Аллергия и зуд",
+            name: "Фенистил (капли / гель)",
+            sub: "Против аллергии и укусов",
+            info: "Убирает зуд от укусов насекомых, крапивницу и пищевую аллергию у детей и взрослых.",
+            how: "Гель наносить тонким слоем на место укуса 2–4 раза в день. Капли внутрь дозируются строго по весу (2 капли на 1 кг веса в сутки)."
+        },
+        en: {
+            tag: "🦟 Itch & Allergy",
+            name: "Fenistil (drops / gel)",
+            sub: "Antihistamine relief",
+            info: "Relieves insect bite itch and skin allergies.",
+            how: "Apply gel thinly 2–4 times daily."
+        }
+    },
+    {
+        keys: "пантенол бепантен ожог рана кожа ссадина",
+        ru: {
+            tag: "🩹 Ожоги и раны",
+            name: "Пантенол / Бепантен",
+            sub: "Заживление кожи",
+            info: "Ускоряет заживление кожи при солнечных и бытовых ожогах, ссадинах, трещинах и сухости.",
+            how: "Наносить тонким слоем на чистую кожу 2–3 раза в день. При свежем термическом ожоге сначала охладить кожу прохладной водой 10 минут."
+        },
+        en: {
+            tag: "🩹 Skin Healing",
+            name: "Panthenol / Bepanthen",
+            sub: "Skin repair cream",
+            info: "Heals minor burns, cuts, and dry skin.",
+            how: "Apply thinly to clean skin 2–3 times daily."
+        }
+    },
+    {
+        keys: "хлоргексидин мирамистин рана горло антисептик",
+        ru: {
+            tag: "🧼 Антисептик",
+            name: "Мирамистин / Хлоргексидин",
+            sub: "Обеззараживающий раствор",
+            info: "Обеззараживает раны, ссадины и применяется для полоскания горла. Не щиплет кожу и подходит детям.",
+            how: "Обработать рану или прополоскать горло 3–4 раза в день. Не глотать!"
+        },
+        en: {
+            tag: "🧼 Antiseptic",
+            name: "Miramistin / Chlorhexidine",
+            sub: "Antiseptic solution",
+            info: "Disinfects wounds and soothes sore throat without stinging.",
+            how: "Apply to wounds or gargle 3–4 times daily. Do not swallow."
+        }
+    },
+    {
+        keys: "нитроглицерин сердце приступ стенокардия боль",
+        ru: {
+            tag: "🚨 Сердце (скорая)",
+            name: "Нитроглицерин (таблетки / спрей)",
+            sub: "Скорая помощь при стенокардии",
+            info: "Мгновенно расширяет сосуды сердца при остром приступе давящей боли за грудиной. Сильно снижает давление — принимать только сидя или лёжа!",
+            how: "Положить 1 таблетку под язык (или 1 пшик спрея) сидя. Если через 5 минут боль не прошла, принять вторую дозу и немедленно вызвать 103!"
+        },
+        en: {
+            tag: "🚨 Heart Emergency",
+            name: "Nitroglycerin",
+            sub: "Angina relief",
+            info: "Relieves acute chest pain. Drops blood pressure — always sit or lie down before taking!",
+            how: "1 tablet under tongue while sitting. Call 103 if pain persists after 5 minutes."
+        }
+    },
+    {
+        keys: "аспаркам панангин калий магний сердце судороги",
+        ru: {
+            tag: "💓 Питание сердца",
+            name: "Панангин / Аспаркам",
+            sub: "Источник калия и магния",
+            info: "Поддерживает работу сердца и убирает ночные судороги в икроножных мышцах. Нельзя при тяжёлой почечной недостаточности.",
+            how: "По 1–2 таблетки 3 раза в день после еды, запивая водой."
+        },
+        en: {
+            tag: "💓 Heart Support",
+            name: "Panangin / Asparkam",
+            sub: "Potassium & Magnesium",
+            info: "Supports heart rhythm and relieves muscle cramps.",
+            how: "1–2 tablets 3 times daily after meals with water."
+        }
+    },
+    {
+        keys: "кардиомагнил тромбоасс кровь тромб сердце",
+        ru: {
+            tag: "🩸 Профилактика",
+            name: "Кардиомагнил / Тромбо АСС (75 мг)",
+            sub: "Разжижение крови для сердца",
+            info: "Защищает сосуды от образования тромбов по назначению кардиолога. Нельзя при язве желудка.",
+            how: "По 1 таблетке (75 мг) 1 раз в день вечером после еды, запивая водой."
+        },
+        en: {
+            tag: "🩸 Blood Thinner",
+            name: "Cardiomagnyl (75 mg)",
+            sub: "Cardio aspirin",
+            info: "Prevents blood clots as prescribed by a cardiologist.",
+            how: "1 tablet once daily in the evening after meals."
+        }
+    },
+    {
+        keys: "метформин сиофор глюкофаж сахар диабет",
+        ru: {
+            tag: "📉 Сахар крови",
+            name: "Метформин / Глюкофаж",
+            sub: "Контроль уровня сахара",
+            info: "Снижает уровень глюкозы в крови при сахарном диабете 2 типа. Назначается строго эндокринологом.",
+            how: "Принимать во время или сразу после еды, запивая водой, строго в дозе, назначенной врачом."
+        },
+        en: {
+            tag: "📉 Blood Sugar",
+            name: "Metformin / Glucophage",
+            sub: "Diabetes management",
+            info: "Controls blood sugar in type 2 diabetes.",
+            how: "Take during or right after meals strictly as prescribed."
+        }
+    },
+    {
+        keys: "амлодипин давление гипертония сосуды",
+        ru: {
+            tag: "❤️ Давление",
+            name: "Амлодипин (5 мг / 10 мг)",
+            sub: "Плановое снижение давления",
+            info: "Плавно снижает повышенное артериальное давление на 24 часа. Не подходит для быстрого сбивания криза.",
+            how: "По 1 таблетке 1 раз в день в одно и то же время, независимо от приёма пищи."
+        },
+        en: {
+            tag: "❤️ Blood Pressure",
+            name: "Amlodipine (5 mg)",
+            sub: "Daily blood pressure control",
+            info: "Lowers high blood pressure steadily over 24 hours.",
+            how: "1 tablet once daily at the same time."
+        }
+    },
+    {
+        keys: "азитромицин сумамед антибиотик ангина бронхит",
+        ru: {
+            tag: "🦠 Антибиотик",
+            name: "Азитромицин / Сумамед",
+            sub: "Антибиотик широкого спектра",
+            info: "Лечит тяжёлые бактериальные инфекции дыхательных путей и ЛОР-органов. Отпускается по рецепту врача.",
+            how: "По 1 таблетке (500 мг) 1 раз в сутки за 1 час до еды или через 2 часа после еды. Стандартный курс — 3 дня."
+        },
+        en: {
+            tag: "🦠 Antibiotic",
+            name: "Azithromycin (500 mg)",
+            sub: "Antibiotic",
+            info: "Treats bacterial respiratory infections. Prescription required.",
+            how: "1 tablet once daily 1 hour before or 2 hours after meals for 3 days."
+        }
+    },
+    {
+        keys: "ацикловир герпес простуда губы",
+        ru: {
+            tag: "👄 Герпес",
+            name: "Ацикловир (таблетки / мазь)",
+            sub: "Противовирусное при герпесе",
+            info: "Останавливает развитие «простуды» на губах и герпетических высыпаний, если начать при первых признаках покалывания.",
+            how: "Мазь наносить каждые 4 часа (5 раз в день). Таблетки (200 мг) — по 1 штуке 5 раз в день в течение 5 дней."
+        },
+        en: {
+            tag: "👄 Cold Sores",
+            name: "Aciclovir (cream / tablets)",
+            sub: "Antiviral for herpes",
+            info: "Stops cold sores if applied at the first tingling sign.",
+            how: "Apply cream 5 times daily every 4 hours."
+        }
+    },
+    {
+        keys: "диклофенак вольтарен спина поясница сустав мазь",
+        ru: {
+            tag: "🦴 Спина и суставы",
+            name: "Диклофенак / Вольтарен (гель)",
+            sub: "Противовоспалительный гель",
+            info: "Снимает боль и воспаление при радикулите, остеохондрозе, растяжениях и ушибах.",
+            how: "Втирать тонким слоем в больное место 2–3 раза в день. Не наносить на открытые раны и царапины!"
+        },
+        en: {
+            tag: "🦴 Back & Joints",
+            name: "Diclofenac / Voltaren Gel",
+            sub: "Topical pain relief",
+            info: "Relieves back, joint, and sprain pain.",
+            how: "Rub thinly onto painful area 2–3 times daily. Avoid broken skin."
+        }
+    },
+    {
+        keys: "троксерутин троксевазин ноги вены синяки отеки",
+        ru: {
+            tag: "🦵 Вены и синяки",
+            name: "Троксевазин / Троксерутин (гель)",
+            sub: "Укрепление сосудов",
+            info: "Убирает тяжесть и отёки в ногах к вечеру, помогает при варикозе и быстро рассасывает синяки.",
+            how: "Наносить утром и вечером лёгкими движениями снизу вверх (от стопы к колену)."
+        },
+        en: {
+            tag: "🦵 Veins & Bruises",
+            name: "Troxevasin Gel",
+            sub: "Vein support",
+            info: "Reduces leg swelling, heaviness, and bruises.",
+            how: "Apply morning and evening moving upward from ankles."
+        }
+    },
+    {
+        keys: "отипакс ухо боль отит капли",
+        ru: {
+            tag: "👂 Боль в ухе",
+            name: "Отипакс (ушные капли)",
+            sub: "Обезболивающие капли в ухо",
+            info: "Быстро снимает острую стреляющую боль в ухе при отите. Категорически нельзя капать, если из уха течёт жидкость или гной!",
+            how: "Согреть флакон в ладони до температуры тела. Закапать по 3–4 капли в больное ухо 2–3 раза в день."
+        },
+        en: {
+            tag: "👂 Ear Pain",
+            name: "Otipax (ear drops)",
+            sub: "Ear pain relief",
+            info: "Relieves acute earache. Never use if fluid or pus is draining from the ear!",
+            how: "Warm bottle in hand, apply 3–4 drops 2–3 times daily."
+        }
+    },
+    {
+        keys: "альбуцид сульфацил глаза конъюнктивит капли",
+        ru: {
+            tag: "👁 Глаза",
+            name: "Сульфацил натрия / Альбуцид",
+            sub: "Антибактериальные глазные капли",
+            info: "Лечит гнойный конъюнктивит и воспаление глаз при попадании инфекции. Может слегка пощипывать первые секунды.",
+            how: "По 1–2 капли в каждый глаз 4–6 раз в день. Открытый флакон хранить не более 4 недель."
+        },
+        en: {
+            tag: "👁 Eye Care",
+            name: "Sulfacyl Sodium (eye drops)",
+            sub: "Antibacterial eye drops",
+            info: "Treats bacterial conjunctivitis and eye redness.",
+            how: "1–2 drops per eye 4–6 times daily."
+        }
+    },
+    {
+        keys: "магний б6 магнелис нервы стресс судороги",
+        ru: {
+            tag: "🌿 Магний и нервы",
+            name: "Магне В6 / Магнелис В6",
+            sub: "Витаминно-минеральный комплекс",
+            info: "Восполняет нехватку магния, снижает раздражительность, улучшает сон и убирает мышечные спазмы.",
+            how: "Взрослым: по 2 таблетки 2–3 раза в день во время еды, запивая стаканом воды."
+        },
+        en: {
+            tag: "🌿 Magnesium",
+            name: "Magne B6",
+            sub: "Mineral & vitamin support",
+            info: "Reduces irritability, improves sleep, and prevents cramps.",
+            how: "Adults: 2 tablets 2–3 times daily with meals."
+        }
+    },
+    {
+        keys: "витамин д3 аквадетрим детримакс иммунитет кости",
+        ru: {
+            tag: "☀️ Витамин D3",
+            name: "Аквадетрим / Детримакс (Витамин D3)",
+            sub: "Поддержка иммунитета и костей",
+            info: "Укрепляет кости, зубы и иммунитет в осенне-зимний период у детей и взрослых.",
+            how: "Профилактическая доза для взрослых — 1000–2000 МЕ (2–4 капли) утром во время завтрака."
+        },
+        en: {
+            tag: "☀️ Vitamin D3",
+            name: "Vitamin D3",
+            sub: "Immunity & bone support",
+            info: "Strengthens bones and immune system.",
+            how: "Adults: 1000–2000 IU once daily with breakfast."
+        }
+    },
+    {
+        keys: "валериана пустырник успокоительное нервы сон",
+        ru: {
+            tag: "🌱 Успокоительное",
+            name: "Экстракт валерианы / Пустырник",
+            sub: "Растительное успокоительное",
+            info: "Мягко успокаивает нервную систему при стрессе, волнении и трудностях с засыпанием.",
+            how: "По 1–2 таблетки 3 раза в день после еды, запивая водой. Эффект накапливается при регулярном приёме."
+        },
+        en: {
+            tag: "🌱 Herbal Calm",
+            name: "Valerian / Motherwort",
+            sub: "Herbal sedative",
+            info: "Gently calms nerves and helps with sleep.",
+            how: "1–2 tablets 3 times daily after meals."
+        }
+    },
+    {
+        keys: "мелатонин мелаксен сон бессонница перелет",
+        ru: {
+            tag: "🌙 Здоровый сон",
+            name: "Мелатонин / Мелаксен (3 мг)",
+            sub: "Гормон сна для засыпания",
+            info: "Помогает быстро уснуть при сбое режима дня, ночных сменах и смене часовых поясов без утренней разбитости.",
+            how: "По 1 таблетке (3 мг) за 30–40 минут до сна, выключив свет и телефон."
+        },
+        en: {
+            tag: "🌙 Sleep Aid",
+            name: "Melatonin (3 mg)",
+            sub: "Sleep aid",
+            info: "Helps fall asleep faster and resets sleep cycle.",
+            how: "1 tablet 30–40 mins before bedtime."
+        }
+    }
+];
+
+medicines.push(...extraMeds);
+
+handleSearch = function() {
+    const query = normalizeText(document.getElementById('search-box').value).trim();
+    if (query.length >= 2) {
+        const words = query.split(/\s+/).filter(w => w.length >= 2);
+        const foundIndex = medicines.findIndex(item => {
+            const haystack = normalizeText(item[currentLang].name + ' ' + item.keys);
+            return words.some(w => haystack.includes(w.length >= 5 ? w.slice(0, -1) : w));
+        });
+        if (foundIndex !== -1) {
+            selectedIdx = foundIndex;
+        }
+    }
+    renderApp();
+};
+
+const origRender = renderApp;
+renderApp = function() {
+    origRender();
+    const query = normalizeText(document.getElementById('search-box').value).trim();
+    if (query.length >= 2) {
+        const words = query.split(/\s+/).filter(w => w.length >= 2);
+        const listBox = document.getElementById('med-list');
+        listBox.innerHTML = '';
+        medicines.forEach((item, index) => {
+            const data = item[currentLang];
+            const haystack = normalizeText(data.name + ' ' + item.keys);
+            const isMatch = haystack.includes(query) || words.some(w => haystack.includes(w.length >= 5 ? w.slice(0, -1) : w));
+            if (isMatch) {
+                const btn = document.createElement('button');
+                btn.className = 'med-btn' + (index === selectedIdx ? ' active' : '');
+                btn.innerHTML = `<span>${data.name}</span><span class="tag">${data.tag}</span>`;
+                btn.onclick = () => {
+                    selectedIdx = index;
+                    renderApp();
+                };
+                listBox.appendChild(btn);
+            }
+        });
+    }
+};
+
+renderApp();
+</script>
+<style>
+    .hl-match {
+        background-color: #fde047;
+        color: #0f172a;
+        padding: 1px 3px;
+        border-radius: 4px;
+        font-weight: 900;
+    }
+    .med-btn.active .hl-match {
+        background-color: #ffffff;
+        color: #0b5ed7;
+    }
+</style>
+
+<script>
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlightText(text, rawQuery) {
+    const cleanQ = rawQuery.trim();
+    if (cleanQ.length < 2) {
+        return text;
+    }
+    const tokens = cleanQ.split(/\s+/).filter(t => t.length >= 2);
+    if (tokens.length === 0) {
+        return text;
+    }
+    const pattern = new RegExp('(' + tokens.map(escapeRegExp).join('|') + ')', 'gi');
+    return text.replace(pattern, '<mark class="hl-match">$1</mark>');
+}
+
+function checkSubstringMatch(item, lang, rawQuery) {
+    const q = normalizeText(rawQuery).trim();
+    if (!q) {
+        return true;
+    }
+    const data = item[lang];
+    const fullText = normalizeText(data.name + ' ' + item.keys);
+    const tokens = q.split(/\s+/).filter(t => t.length >= 2);
+    if (tokens.length === 0) {
+        return fullText.includes(q);
+    }
+    return tokens.some(token => fullText.includes(token));
+}
+handleSearch = function() {
+    const rawQuery = document.getElementById('search-box').value;
+    const cleanQ = normalizeText(rawQuery).trim();
+    if (cleanQ.length >= 2) {
+        const foundIndex = medicines.findIndex(item => checkSubstringMatch(item, currentLang, rawQuery));
+        if (foundIndex !== -1) {
+            selectedIdx = foundIndex;
+        }
+    }
+    renderApp();
+};
+
+renderApp = function() {
+    const u = uiText[currentLang];
+    const currentMed = medicines[selectedIdx][currentLang];
+    const rawQuery = document.getElementById('search-box').value;
+    const listBox = document.getElementById('med-list');
+
+    document.getElementById('ui-title').textContent = u.title;
+    document.getElementById('search-box').placeholder = u.search;
+    document.getElementById('lbl-info').textContent = u.infoLabel;
+    document.getElementById('lbl-how').textContent = u.howLabel;
+    document.getElementById('ui-disc').textContent = u.disc;
+
+    document.getElementById('med-name').textContent = currentMed.name;
+    document.getElementById('med-sub').textContent = currentMed.sub;
+    document.getElementById('txt-info').textContent = currentMed.info;
+    document.getElementById('txt-how').textContent = currentMed.how;
+
+    document.getElementById('btn-ru').className = 'ctrl-btn' + (currentLang === 'ru' ? ' active' : '');
+    document.getElementById('btn-en').className = 'ctrl-btn' + (currentLang === 'en' ? ' active' : '');
+
+    listBox.innerHTML = '';
+    medicines.forEach((item, index) => {
+        if (checkSubstringMatch(item, currentLang, rawQuery)) {
+            const data = item[currentLang];
+            const btn = document.createElement('button');
+            btn.className = 'med-btn' + (index === selectedIdx ? ' active' : '');
+            const highlightedName = highlightText(data.name, rawQuery);
+            btn.innerHTML = `<span>${highlightedName}</span><span class="tag">${data.tag}</span>`;
+            btn.onclick = () => {
+                selectedIdx = index;
+                renderApp();
+            };
+            listBox.appendChild(btn);
+        }
+    });
+};
+
+renderApp();
+</script>
+<style>
+    .symptom-banner {
+        display: none;
+        background-color: #ecfdf5;
+        border: 2px solid #6ee7b7;
+        color: #065f46;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: calc(14px * var(--scale));
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+</style>
+
+<script>
+const symptomMap = {
+    "тошн": ["тошн", "рвот", "отравл", "желуд", "интоксикац", "обезвоживан"],
+    "рвот": ["рвот", "тошн", "отравл", "обезвоживан"],
+    "понос": ["диаре", "понос", "отравл", "живот"],
+    "живот": ["живот", "спазм", "желуд", "отравл", "диаре", "вздут"],
+    "желуд": ["желуд", "изжог", "гастрит", "живот", "пищеварен"],
+    "изжог": ["изжог", "желуд", "гастрит", "кисл"],
+    "голов": ["голов", "мигрен"],
+    "горл": ["горл", "ангин", "фарингит", "першен"],
+    "кашл": ["кашл", "кашел", "мокрот", "бронхит"],
+    "кашел": ["кашел", "кашл", "мокрот", "бронхит"],
+    "нос": ["нос", "насморк", "заложенност"],
+    "насморк": ["насморк", "нос", "аллерг"],
+    "сопл": ["насморк", "нос"],
+    "температур": ["температур", "жар", "простуд", "грипп"],
+    "жар": ["жар", "температур", "простуд"],
+    "простуд": ["простуд", "грипп", "температур", "насморк", "горл"],
+    "зуб": ["зуб", "десн"],
+    "ух": ["ух", "отит"],
+    "уш": ["ух", "отит"],
+    "глаз": ["глаз", "конъюнктивит"],
+    "спин": ["спин", "поясниц", "радикулит", "остеохондроз", "сустав"],
+    "сустав": ["сустав", "спин", "растяжен"],
+    "сердц": ["сердц", "стенокард", "сердцебиен"],
+    "давлен": ["давлен", "гипертон"],
+    "аллерг": ["аллерг", "зуд", "крапивниц", "сып", "отек", "укус"],
+    "чеш": ["зуд", "аллерг", "укус"],
+    "укус": ["укус", "зуд", "аллерг"],
+    "ожог": ["ожог", "ран", "кож"],
+    "ран": ["ран", "ссадин", "ожог", "антисептик"],
+    "нерв": ["нерв", "стресс", "тревог", "волнен", "успоко"],
+    "стресс": ["стресс", "нерв", "тревог", "волнен"],
+    "усн": ["сон", "бессонниц", "засыпан"],
+    "сон": ["сон", "бессонниц", "засыпан"],
+    "бессонниц": ["бессонниц", "сон", "засыпан"],
+    "судорог": ["судорог", "магн", "кал"],
+    "ног": ["ног", "вен", "варикоз", "отек", "синяк"]
+};
+
+const stopWords = [
+    "меня", "очень", "сильно", "что", "можно", "выпить", "принять",
+    "поможет", "помочь", "если", "как", "мне", "для", "при", "болит",
+    "болят", "болеть", "стал", "стало", "появился", "появилась", "чувствую"
+];
+
+function getWordStem(word) {
+    let w = normalizeText(word);
+    if (w.length <= 3) {
+        return w;
+    }
+    return w.replace(/(ами|ями|ого|ему|ыми|ими|ое|ее|ая|яя|ые|ие|ой|ей|ом|ем|ах|ях|ит|ет|ут|ют|ат|ят|у|ю|а|я|ы|и|е|о)$/, '');
+}
+
+function getExpandedStems(rawQuery) {
+    const cleanQ = normalizeText(rawQuery).trim();
+    const rawTokens = cleanQ.split(/\s+/).filter(t => t.length >= 2);
+    const meaningful = rawTokens.filter(t => !stopWords.includes(t));
+    const activeTokens = meaningful.length > 0 ? meaningful : rawTokens;
+
+    return activeTokens.map(token => {
+        const stem = getWordStem(token);
+        const variants = new Set([token, stem]);
+        Object.keys(symptomMap).forEach(key => {
+            if (stem.startsWith(key) || key.startsWith(stem)) {
+                symptomMap[key].forEach(syn => variants.add(syn));
+            }
+        });
+        return Array.from(variants);
+    });
+}
+const listContainer = document.getElementById('med-list');
+const bannerDiv = document.createElement('div');
+bannerDiv.id = 'symptom-banner';
+bannerDiv.className = 'symptom-banner';
+listContainer.parentNode.insertBefore(bannerDiv, listContainer);
+
+function matchMedicineSmart(item, lang, rawQuery) {
+    const q = normalizeText(rawQuery).trim();
+    if (!q) {
+        return true;
+    }
+    const data = item[lang];
+    const searchableText = normalizeText(
+        data.name + ' ' + data.sub + ' ' + data.info + ' ' + item.keys
+    );
+
+    if (searchableText.includes(q)) {
+        return true;
+    }
+
+    const tokenGroups = getExpandedStems(rawQuery);
+    if (tokenGroups.length === 0) {
+        return true;
+    }
+
+    return tokenGroups.every(variants =>
+        variants.some(v => v.length >= 2 && searchableText.includes(v))
+    );
+}
+
+handleSearch = function() {
+    const rawQuery = document.getElementById('search-box').value;
+    const cleanQ = normalizeText(rawQuery).trim();
+    if (cleanQ.length >= 2) {
+        const foundIndex = medicines.findIndex(item => matchMedicineSmart(item, currentLang, rawQuery));
+        if (foundIndex !== -1) {
+            selectedIdx = foundIndex;
+        }
+    }
+    renderApp();
+};
+
+renderApp = function() {
+    const u = uiText[currentLang];
+    const currentMed = medicines[selectedIdx][currentLang];
+    const rawQuery = document.getElementById('search-box').value;
+    const cleanQ = normalizeText(rawQuery).trim();
+    const listBox = document.getElementById('med-list');
+    const banner = document.getElementById('symptom-banner');
+
+    document.getElementById('ui-title').textContent = u.title;
+    document.getElementById('search-box').placeholder = currentLang === 'ru'
+        ? "🔍 Препарат или симптом (болит голова, тошнит, горло)..."
+        : "🔍 Medicine or symptom (headache, nausea, sore throat)...";
+    document.getElementById('lbl-info').textContent = u.infoLabel;
+    document.getElementById('lbl-how').textContent = u.howLabel;
+    document.getElementById('ui-disc').textContent = u.disc;
+
+    document.getElementById('med-name').textContent = currentMed.name;
+    document.getElementById('med-sub').textContent = currentMed.sub;
+    document.getElementById('txt-info').textContent = currentMed.info;
+    document.getElementById('txt-how').textContent = currentMed.how;
+
+    document.getElementById('btn-ru').className = 'ctrl-btn' + (currentLang === 'ru' ? ' active' : '');
+    document.getElementById('btn-en').className = 'ctrl-btn' + (currentLang === 'en' ? ' active' : '');
+
+    listBox.innerHTML = '';
+    let matchCount = 0;
+
+    medicines.forEach((item, index) => {
+        if (matchMedicineSmart(item, currentLang, rawQuery)) {
+            matchCount++;
+            const data = item[currentLang];
+            const btn = document.createElement('button');
+            btn.className = 'med-btn' + (index === selectedIdx ? ' active' : '');
+            const highlightedName = highlightText(data.name, rawQuery);
+            btn.innerHTML = `<span>${highlightedName}</span><span class="tag">${data.tag}</span>`;
+            btn.onclick = () => {
+                selectedIdx = index;
+                renderApp();
+            };
+            listBox.appendChild(btn);
+        }
+    });
+
+    if (cleanQ.length >= 2 && matchCount > 0) {
+        banner.style.display = 'block';
+        banner.textContent = currentLang === 'ru'
+            ? `🩺 Найдено вариантов: ${matchCount} (выберите подходящий, при ухудшении обратитесь к врачу)`
+            : `🩺 Matches found: ${matchCount} (consult a doctor if symptoms persist)`;
+    } else if (cleanQ.length >= 2 && matchCount === 0) {
+        banner.style.display = 'block';
+        banner.textContent = currentLang === 'ru'
+            ? "⚠️ По этому запросу ничего не найдено. Попробуйте написать проще (например: голова, желудок, кашель)."
+            : "⚠️ No matches found. Try simpler keywords.";
+    } else {
+        banner.style.display = 'none';
+    }
+};
+
+renderApp();
+</script>
+<style>
+    .triage-alert {
+        display: none;
+        background-color: #eff6ff;
+        border: 2px solid #3b82f6;
+        color: #1e3a8a;
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-size: calc(15px * var(--scale));
+        font-weight: 700;
+        margin-bottom: 12px;
+        line-height: 1.4;
+    }
+    .triage-alert.urgent {
+        background-color: #fef2f2;
+        border-color: #ef4444;
+        color: #991b1b;
+    }
+</style>
+
+<script>
+const moreMeds = [
+    {
+        keys: "андипал давление затылок голова спазм сосуды",
+        ru: {
+            tag: "❤️ Давление и голова",
+            name: "Андипал (таблетки)",
+            sub: "Спазмолитик",
+            info: "Применяется при головной боли, связанной с повышенным артериальным давлением.",
+            how: "Способ применения согласно инструкции или назначению врача."
+        },
+        en: {
+            tag: "❤️ BP & Headache",
+            name: "Andipal (tablets)",
+            sub: "Antispasmodic for mild high blood pressure",
+            info: "Helps with back-of-head pain caused by mild blood pressure spikes.",
+            how: "Use as directed by a healthcare professional."
+        }
+    },
+    {
+        keys: "спазмалгон пенталгин голова зуб спазм боль мигрень",
+        ru: {
+            tag: "💊 Сильная головная боль",
+            name: "Спазмалгон / Пенталгин",
+            sub: "Комбинированное обезболивающее",
+            info: "Снимает различные виды боли, включая головную и зубную.",
+            how: "Применять согласно инструкции изготовителя."
+        },
+        en: {
+            tag: "💊 Strong Headache",
+            name: "Spazmalgon / Pentalgin",
+            sub: "Combined painkiller",
+            info: "Relieves severe headache, toothache, and spasms.",
+            how: "Use according to package instructions."
+        }
+    },
+    {
+        keys: "миг суматриптан мигрень висок пульсирует боль",
+        ru: {
+            tag: "⚡ Мигрень",
+            name: "МИГ 400 (Ибупрофен)",
+            sub: "При сильной головной боли",
+            info: "Используется для облегчения головной боли и симптомов мигрени.",
+            how: "Применять в соответствии с инструкцией препарата."
+        },
+        en: {
+            tag: "⚡ Migraine",
+            name: "MIG 400 (Ibuprofen)",
+            sub: "For severe headache and migraine",
+            info: "Quickly relieves throbbing headache and high fever.",
+            how: "Use according to package instructions."
+        }
+    },
+    {
+        keys: "стрепсилс интенсив тантум верде горло боль глотать ангина",
+        ru: {
+            tag: "🗣 Сильная боль в горле",
+            name: "Тантум Верде / Стрепсилс Интенсив",
+            sub: "Средство для горла",
+            info: "Помогает уменьшить неприятные ощущения и боль в горле при глотании.",
+            how: "Использовать согласно инструкции на упаковке."
+        },
+        en: {
+            tag: "🗣 Severe Sore Throat",
+            name: "Tantum Verde / Strepsils",
+            sub: "Anti-inflammatory throat relief",
+            info: "Relieves sharp pain when swallowing and throat swelling.",
+            how: "Use as directed on the package."
+        }
+    },
+    {
+        keys: "мукалтин бромгексин кашель мокрота откашляться бронхит",
+        ru: {
+            tag: "🫁 От кашля",
+            name: "Мукалтин / Бромгексин",
+            sub: "Отхаркивающее средство",
+            info: "Способствует разжижению и выведению мокроты при кашле.",
+            how: "Принимать согласно официальной инструкции."
+        },
+        en: {
+            tag: "🫁 Cough Relief",
+            name: "Mukaltin / Bromhexine",
+            sub: "Expectorant",
+            info: "Softens cough and helps clear bronchial mucus.",
+            how: "Follow package instructions."
+        }
+    },
+    {
+        keys: "ренгалин стодаль кашель сухой влажный горло",
+        ru: {
+            tag: "🌬 Любой кашель",
+            name: "Ренгалин",
+            sub: "При кашле",
+            info: "Применяется для облегчения сухого и влажного кашля.",
+            how: "Использовать согласно инструкции."
+        },
+        en: {
+            tag: "🌬 Dry & Wet Cough",
+            name: "Rengalin",
+            sub: "Universal cough relief",
+            info: "Reduces throat irritation and coughing fits.",
+            how: "Follow package instructions."
+        }
+    },
+    {
+        keys: "називин отривин ринонорм нос заложен насморк капли",
+        ru: {
+            tag: "👃 Заложенность носа",
+            name: "Називин / Отривин",
+            sub: "Назальные капли или спрей",
+            info: "Помогают уменьшить отечность слизистой оболочки носа и облегчить дыхание.",
+            how: "Применять согласно инструкции по медицинскому применению."
+        },
+        en: {
+            tag: "👃 Stuffy Nose",
+            name: "Nasivin / Otrivin",
+            sub: "Nasal decongestant",
+            info: "Quickly clears blocked nose.",
+            how: "Use as directed in the package leaflet."
+        }
+    },
+    {
+        keys: "ингавирин кагоцел арбидол вирус грипп простуда орви",
+        ru: {
+            tag: "🛡 Противовирусное",
+            name: "Ингавирин / Кагоцел",
+            sub: "Противовирусные средства",
+            info: "Используются в комплексной терапии ОРВИ и гриппа.",
+            how: "Принимать согласно инструкции препарата."
+        },
+        en: {
+            tag: "🛡 Antiviral",
+            name: "Ingavirin / Kagocel",
+            sub: "For early cold and flu symptoms",
+            info: "Supports antiviral response during illness.",
+            how: "Use as directed."
+        }
+    },
+    {
+        keys: "мотилиум церукал тошнота рвота тяжесть желудок",
+        ru: {
+            tag: "🤢 Тошнота и рвота",
+            name: "Мотилиум / Домперидон",
+            sub: "Средство против тошноты",
+            info: "Применяется при тошноте и ощущении тяжести в желудке.",
+            how: "Использовать в соответствии с инструкцией."
+        },
+        en: {
+            tag: "🤢 Nausea Relief",
+            name: "Motilium / Domperidone",
+            sub: "Anti-nausea medication",
+            info: "Relieves nausea, vomiting urges, and stomach heaviness.",
+            how: "Use as directed."
+        }
+    },
+    {
+        keys: "энтерофурил стопдиар диарея понос инфекция живот",
+        ru: {
+            tag: "🦠 Кишечная инфекция",
+            name: "Энтерофурил / Стопдиар",
+            sub: "Кишечный антисептик",
+            info: "Применяется при диарее инфекционного происхождения.",
+            how: "Применять согласно инструкции производителя."
+        },
+        en: {
+            tag: "🦠 Gut Infection",
+            name: "Enterofuryl / Stopdiar",
+            sub: "Intestinal antiseptic",
+            info: "Fights bacterial diarrhea.",
+            how: "Use as directed."
+        }
+    },
+    {
+        keys: "дюспаталин тримедат живот спазм кишечник вздутие",
+        ru: {
+            tag: "😣 Боли в кишечнике",
+            name: "Тримедат / Дюспаталин",
+            sub: "Регулятор моторики ЖКТ",
+            info: "Помогает при спазмах и дискомфорте в области кишечника.",
+            how: "Применять согласно инструкции по применению."
+        },
+        en: {
+            tag: "😣 Bowel Cramps",
+            name: "Trimedat / Duspatalin",
+            sub: "Intestinal antispasmodic",
+            info: "Relieves bowel spasms and abdominal discomfort.",
+            how: "Use as directed."
+        }
+    },
+    {
+        keys: "эспумизан метеоспазмил вздутие газы живот колики",
+        ru: {
+            tag: "🎈 Вздутие и газы",
+            name: "Эспумизан",
+            sub: "Ветрогонное средство",
+            info: "Уменьшает газообразование и вздутие в кишечнике.",
+            how: "Использовать согласно инструкции."
+        },
+        en: {
+            tag: "🎈 Bloating & Gas",
+            name: "Espumisan",
+            sub: "Anti-gas relief",
+            info: "Relieves bloating and gas.",
+            how: "Use as directed."
+        }
+    },
+    {
+        keys: "бетасерк бетагистин кружится голова головокружение шум уши",
+        ru: {
+            tag: "💫 Головокружение",
+            name: "Бетасерк / Бетагистин",
+            sub: "Средство при головокружении",
+            info: "Применяется при нарушениях вестибулярного аппарата и головокружениях по назначению врача.",
+            how: "Использовать по рекомендации специалиста."
+        },
+        en: {
+            tag: "💫 Dizziness",
+            name: "Betaserc / Betahistine",
+            sub: "For vertigo and ear ringing",
+            info: "Relieves dizziness as prescribed by a physician.",
+            how: "Use as prescribed."
+        }
+    },
+    {
+        keys: "мексидол цитофлавин сосуды память головокружение слабость",
+        ru: {
+            tag: "🧠 Сосуды мозга",
+            name: "Мексидол",
+            sub: "Антиоксидантное средство",
+            info: "Используется в составе комплексной терапии при нарушениях мозгового кровообращения.",
+            how: "Применять по назначению врача."
+        },
+        en: {
+            tag: "🧠 Brain Support",
+            name: "Mexidol",
+            sub: "Vascular & nerve support",
+            info: "Supports brain circulation.",
+            how: "Use as directed by a healthcare professional."
+        }
+    },
+    {
+        keys: "банеоцин левомеколь рана гной царапина порез мазь",
+        ru: {
+            tag: "🩹 Гнойные раны",
+            name: "Левомеколь / Банеоцин",
+            sub: "Антибактериальное средство",
+            info: "Применяется для обработки мелких повреждений кожи и профилактики инфекций.",
+            how: "Наносить согласно инструкции."
+        },
+        en: {
+            tag: "🩹 Wound Care",
+            name: "Levomekol / Baneocin",
+            sub: "Antibacterial ointment",
+            info: "Heals cuts and prevents skin infection.",
+            how: "Use as directed."
+        }
+    },
+    {
+        keys: "визин систейн хило-комод глаза сухость покраснение компьютер",
+        ru: {
+            tag: "👁 Усталость глаз",
+            name: "Систейн Ультра / Хило-Комод",
+            sub: "Увлажняющие капли",
+            info: "Устраняют сухость и раздражение глаз при зрительной нагрузке.",
+            how: "Закапывать по необходимости согласно инструкции."
+        },
+        en: {
+            tag: "👁 Dry Eyes",
+            name: "Systane Ultra / Hylo-Comod",
+            sub: "Lubricating eye drops",
+            info: "Relieves dry and tired eyes.",
+            how: "Use as needed."
+        }
+    },
+    {
+        keys: "эриус цетрин аллергия зуд чихание насморк",
+        ru: {
+            tag: "🤧 Аллергия",
+            name: "Цетрин / Эриус",
+            sub: "Антигистаминное средство",
+            info: "Применяется при симптомах сезонной или круглосуточной аллергии.",
+            how: "Принимать согласно инструкции."
+        },
+        en: {
+            tag: "🤧 Allergy",
+            name: "Cetrin / Erius",
+            sub: "Allergy relief",
+            info: "Stops sneezing and itching.",
+            how: "Use as directed."
+        }
+    },
+    {
+        keys: "нашатырный спирт аммиак обморок темнеет в глазах слабость",
+        ru: {
+            tag: "🚑 Первая помощь",
+            name: "Раствор аммиака",
+            sub: "Средство для оказания первой помощи",
+            info: "Используется для стимуляции дыхания при предобморочных состояниях.",
+            how: "Применять в соответствии с правилами первой помощи."
+        },
+        en: {
+            tag: "🚑 First Aid",
+            name: "Ammonia Solution",
+            sub: "For fainting & dizziness",
+            info: "Helps revive someone feeling faint.",
+            how: "Use according to first aid guidelines."
+        }
+    },
+    {
+        keys: "глюкоза аскорбинка сахар слабость темнеет в глазах голод",
+        ru: {
+            tag: "🍬 Упадок сил",
+            name: "Глюкоза / Аскорбиновая кислота",
+            sub: "Энергетическая поддержка",
+            info: "Применяется при выраженной усталости или снижении уровня энергии.",
+            how: "Использовать согласно инструкции."
+        },
+        en: {
+            tag: "🍬 Low Energy",
+            name: "Glucose Tablets",
+            sub: "Quick energy boost",
+            info: "Helps with fatigue.",
+            how: "Use as directed."
+        }
+    },
+    {
+        keys: "долгит найз гель колено спина мышцы растяжение ушиб",
+        ru: {
+            tag: "🏃 Ушибы и растяжения",
+            name: "Долгит (гель с ибупрофеном)",
+            sub: "Обезболивающий гель",
+            info: "Применяется наружно при боли в мышцах и суставах, ушибах и растяжениях.",
+            how: "Наносить на пораженный участок согласно инструкции."
+        },
+        en: {
+            tag: "🏃 Sprains & Bruises",
+            name: "Dolgit Cream (Ibuprofen)",
+            sub: "Muscle & joint pain cream",
+            info: "Relieves pain and swelling from bruises and sprains.",
+            how: "Use as directed."
+        }
+    }
+];
+
+medicines.push(...moreMeds);
+const triageRules = [
+    {
+        test: /затыл|давлен|висок.*стуч|мушк.*глаз/i,
+        urgent: true,
+        ru: "⚠️ Внимание (симптом давления): боль в затылке и «мушки» перед глазами могут быть связаны с изменением артериального давления. Рекомендуется измерить артериальное давление.",
+        en: "⚠️ Blood Pressure Alert: Pain at the back of the head may indicate high blood pressure. Check your BP."
+    },
+    {
+        test: /темнеет|обморок|кружит|кружится|шатк|слабост/i,
+        urgent: true,
+        ru: "🚨 При появлении слабости или головокружения рекомендуется присесть или прилечь, обеспечить доступ свежего воздуха.",
+        en: "🚨 Sit or lie down immediately if feeling dizzy or weak."
+    },
+    {
+        test: /сердц|груд.*давит|груд.*жжет|за грудин/i,
+        urgent: true,
+        ru: "🚨 При возникновении дискомфорта или боли в грудной клетке рекомендуется обратиться за медицинской помощью.",
+        en: "🚨 Chest Pain Alert: Seek medical attention if experiencing chest discomfort."
+    },
+    {
+        test: /горл.*каш|каш.*горл/i,
+        urgent: false,
+        ru: "🩺 Комплексный симптом (кашель + горло): ниже представлены средства для облегчения симптомов в горле и при кашле.",
+        en: "🩺 Combined Symptom (Cough + Throat): Showing remedies for both throat pain and cough relief below."
+    }
+];
+
+const triageDiv = document.createElement('div');
+triageDiv.id = 'triage-alert';
+triageDiv.className = 'triage-alert';
+const symBanner = document.getElementById('symptom-banner');
+symBanner.parentNode.insertBefore(triageDiv, symBanner);
+
+function getCombinedStems(rawQuery) {
+    const cleanQ = normalizeText(rawQuery).trim();
+    const rawTokens = cleanQ.split(/\s+/).filter(t => t.length >= 2);
+    const meaningful = rawTokens.filter(t => !stopWords.includes(t) && t !== "очень" && t !== "помоги" && t !== "глазах");
+    const activeTokens = meaningful.length > 0 ? meaningful : rawTokens;
+
+    return activeTokens.map(token => {
+        const stem = getWordStem(token);
+        const variants = new Set([token, stem]);
+        if (token.startsWith("темн") || token.startsWith("глаз")) {
+            ["обморок", "головокружен", "давлен", "слабост"].forEach(s => variants.add(s));
+        }
+        if (token.startsWith("затыл")) {
+            ["давлен", "затылок", "голов", "спазм"].forEach(s => variants.add(s));
+        }
+        Object.keys(symptomMap).forEach(key => {
+            if (stem.startsWith(key) || key.startsWith(stem)) {
+                symptomMap[key].forEach(syn => variants.add(syn));
+            }
+        });
+        return Array.from(variants);
+    });
+}
+
+matchMedicineSmart = function(item, lang, rawQuery) {
+    const q = normalizeText(rawQuery).trim();
+    if (!q) return true;
+    const data = item[lang];
+    const searchableText = normalizeText(data.name + ' ' + data.sub + ' ' + data.info + ' ' + item.keys);
+
+    if (searchableText.includes(q)) return true;
+
+    const tokenGroups = getCombinedStems(rawQuery);
+    if (tokenGroups.length === 0) return true;
+
+    if (tokenGroups.length > 1) {
+        return tokenGroups.some(variants =>
+            variants.some(v => v.length >= 2 && searchableText.includes(v))
+        );
+    }
+    return tokenGroups[0].some(v => v.length >= 2 && searchableText.includes(v));
+};
+
+const prevRender = renderApp;
+renderApp = function() {
+    prevRender();
+    const rawQuery = document.getElementById('search-box').value.trim();
+    const tBox = document.getElementById('triage-alert');
+    const matchedRule = triageRules.find(r => r.test.test(rawQuery));
+
+    if (matchedRule && rawQuery.length >= 3) {
+        tBox.style.display = 'block';
+        tBox.className = 'triage-alert' + (matchedRule.urgent ? ' urgent' : '');
+        tBox.textContent = matchedRule[currentLang];
+    } else {
+        tBox.style.display = 'none';
+    }
+};
+
+renderApp();
+</script>
+<style>
+    .layout {
+        max-width: 1180px;
+        grid-template-columns: 1.35fr 1fr;
+    }
+    .search-input {
+        padding: 18px 20px;
+        font-size: calc(20px * var(--scale));
+    }
+    .chip-btn {
+        padding: 10px 14px;
+        font-size: calc(15px * var(--scale));
+    }
+    .med-list {
+        max-height: 540px;
+    }
+    .med-btn {
+        padding: 17px 18px;
+        font-size: calc(19px * var(--scale));
+    }
+    .tag {
+        font-size: calc(14px * var(--scale));
+        padding: 5px 12px;
+    }
+</style>
+<style>
+    .symptom-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 14px;
+    }
+    .chip-btn {
+        padding: 7px 11px;
+        font-size: calc(13px * var(--scale));
+        font-weight: 800;
+        background-color: #f1f5f9;
+        color: #334155;
+        border: 2px solid #cbd5e1;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: 0.15s;
+    }
+    .chip-btn:hover, .chip-btn.active {
+        background-color: #0b5ed7;
+        color: #ffffff;
+        border-color: #0b5ed7;
+    }
+</style>
+
+<script>
+const quickSymptoms = [
+    { label: "🔄 Все", query: "" },
+    { label: "🤕 Голова", query: "голова" },
+    { label: "🌡 Жар / Простуда", query: "температура" },
+    { label: "🗣 Горло и кашель", query: "горло кашель" },
+    { label: "🤢 Живот / Тошнота", query: "живот" },
+    { label: "❤️ Сердце / Давление", query: "давление сердце" },
+    { label: "🤧 Аллергия", query: "аллергия" },
+    { label: "🦴 Спина / Ушибы", query: "спина" }
+];
+
+const searchInputEl = document.getElementById('search-box');
+const chipsWrapper = document.createElement('div');
+chipsWrapper.className = 'symptom-chips';
+searchInputEl.parentNode.insertBefore(chipsWrapper, searchInputEl.nextSibling);
+
+quickSymptoms.forEach(sym => {
+    const btn = document.createElement('button');
+    btn.className = 'chip-btn';
+    btn.textContent = sym.label;
+    btn.onclick = () => {
+        searchInputEl.value = sym.query;
+        document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active'));
+        if (sym.query) btn.classList.add('active');
+        handleSearch();
+    };
+    chipsWrapper.appendChild(btn);
+});
+const fullClinicalRules = [
+    {
+        test: /живот|спазм|колик|аппендиц/i,
+        urgent: true,
+        ru: "🚨 Правило «Острого живота»: при резкой, нарастающей боли в животе НЕ принимайте обезболивающие до осмотра врача — это может скрыть симптомы аппендицита. При сильной боли звоните 103!",
+        en: "🚨 Acute Abdomen Warning: Do not take painkillers for severe abdominal pain before a doctor's exam — it may mask appendicitis. Call 103!"
+    },
+    {
+        test: /затыл|давлен|висок.*стуч|мушк/i,
+        urgent: true,
+        ru: "⚠️ Контроль давления: боль в затылке и «мушки» перед глазами часто связаны со скачком давления. Сначала измерьте АД тонометром!",
+        en: "⚠️ Blood Pressure Check: Back-of-head pain often indicates high blood pressure. Measure your BP first!"
+    },
+    {
+        test: /темнеет|обморок|кружит|кружится|слабост/i,
+        urgent: true,
+        ru: "🚨 Первая помощь: при потемнении в глазах и головокружении немедленно сядьте или лягте, расстегните тесную одежду и откройте окно. При потере сознания вызывайте 103!",
+        en: "🚨 First Aid: Sit or lie down immediately if dizzy or faint. Ensure fresh air and call 103 if needed!"
+    },
+    {
+        test: /сердц|груд.*давит|груд.*жжет|стенокард/i,
+        urgent: true,
+        ru: "🚨 Кардио-тревога: при давящей боли за грудиной примите положение сидя. Если боль не проходит через 5–10 минут — срочно вызывайте скорую (103)!",
+        en: "🚨 Cardiac Alert: Sit down immediately if experiencing chest pressure. Call 103 if pain lasts over 5–10 minutes!"
+    },
+    {
+        test: /кашл|кашел/i,
+        urgent: false,
+        ru: "🩺 Подсказка фельдшера: различайте тип кашля! При сухом кашле нужны средства, успокаивающие горло, при влажном — разжижающие мокроту (АЦЦ, Мукалтин). Не смешивайте их!",
+        en: "🩺 Clinical Tip: Distinguish dry vs. wet cough! Never mix cough suppressants with mucus-thinning drugs."
+    },
+    {
+        test: /температур|жар|простуд|грипп/i,
+        urgent: false,
+        ru: "🩺 Подсказка фельдшера: температуру ниже 38,0 °C без тяжёлых симптомов сбивать не рекомендуется. Пейте больше тёплой воды и не смешивайте порошки (Терафлю) с таблетками Парацетамола!",
+        en: "🩺 Clinical Tip: Fever below 38.0 °C usually doesn't need medication. Stay hydrated and never mix cold powders with Paracetamol!"
+    },
+    {
+        test: /тошн|рвот|отравл|понос|диаре/i,
+        urgent: false,
+        ru: "🩺 Подсказка фельдшера: главное при отравлении — не допустить обезвоживания (пейте Регидрон или воду мелкими глотками). Сорбенты (Смекта, Уголь) пейте отдельно от других таблеток (интервал 2 часа).",
+        en: "🩺 Clinical Tip: Prevent dehydration with small sips of water/Rehydron. Keep a 2-hour gap between sorbents and other pills."
+    },
+    {
+        test: /аллерг|зуд|крапивниц|отек|укус/i,
+        urgent: true,
+        ru: "⚠️ Аллерго-контроль: если вместе с сыпью или укусом появился отёк лица, губ, языка или стало трудно дышать (отёк Квинке) — немедленно звоните 103!",
+        en: "⚠️ Allergy Alert: If swelling of lips/face or breathing difficulty occurs, call 103 immediately!"
+    }
+];
+
+const oldRenderFn = renderApp;
+renderApp = function() {
+    oldRenderFn();
+    const rawQuery = document.getElementById('search-box').value.trim();
+    const tBox = document.getElementById('triage-alert');
+    const rule = fullClinicalRules.find(r => r.test.test(rawQuery));
+
+    if (rule && rawQuery.length >= 2) {
+        tBox.style.display = 'block';
+        tBox.className = 'triage-alert' + (rule.urgent ? ' urgent' : '');
+        tBox.textContent = rule[currentLang];
+    } else {
+        tBox.style.display = 'none';
+    }
+};
+
+renderApp();
+</script>
+<style>
+    .symptom-chips {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+    .chip-btn {
+        width: 100%;
+        padding: 18px 14px;
+        font-size: calc(20px * var(--scale));
+        font-weight: 800;
+        border-radius: 14px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+<style>
+    .disclaimer {
+        margin-top: 18px;
+        padding: 12px 14px;
+        border-top: 1px dashed #cbd5e1;
+        font-size: calc(14px * var(--scale));
+        line-height: 1.45;
+        color: #475569;
+        opacity: 0.58;
+        text-align: left;
+        transition: opacity 0.2s;
+    }
+    .disclaimer:hover {
+        opacity: 0.9;
+    }
+</style>
+
+<script>
+const prevRenderWithNote = renderApp;
+renderApp = function() {
+    prevRenderWithNote();
+    const currentMed = medicines[selectedIdx][currentLang];
+    const discEl = document.getElementById('ui-disc');
+    if (discEl && currentMed) {
+        if (currentLang === 'ru') {
+            discEl.textContent = `Примечание к препарату «${currentMed.name}»: данный сервис не является настоящим врачом и не может поставить точный диагноз. Инструкция упрощена для удобства — используйте препарат аккуратно и обязательно проконсультируйтесь со специалистом.`;
+        } else {
+            discEl.textContent = `Note for "${currentMed.name}": this service is not a real doctor and cannot provide an accurate medical diagnosis. Always use medication carefully and consult a healthcare professional.`;
+        }
+    }
+};
+
+renderApp();
+</script>
+<style>
+    .list-divider {
+        margin-top: 22px;
+        padding-top: 16px;
+        border-top: 3px solid #e2e8f0;
+        margin-bottom: 12px;
+        font-size: calc(15px * var(--scale));
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-card.nuance {
+        background-color: #fff1f2;
+        border-color: #fecdd3;
+    }
+    .section-card.nuance .section-label {
+        color: #be123c;
+    }
+</style>
+
+<script>
+const listEl = document.getElementById('med-list');
+const dividerEl = document.createElement('div');
+dividerEl.id = 'list-divider';
+dividerEl.className = 'list-divider';
+dividerEl.textContent = '📋 Выберите препарат из списка:';
+listEl.parentNode.insertBefore(dividerEl, listEl);
+
+const howCard = document.querySelector('.section-card.dosage');
+const nuanceCard = document.createElement('div');
+nuanceCard.className = 'section-card nuance';
+nuanceCard.innerHTML = `
+    <div class="section-label" id="lbl-nuance">⚠️ Особые условия и нюансы приёма</div>
+    <p class="section-text" id="txt-nuance"></p>
+`;
+howCard.parentNode.insertBefore(nuanceCard, howCard.nextSibling);
+
+const specialNuances = {
+    "валидол": {
+        ru: "Особое условие: таблетку нельзя раскусывать и сразу запивать водой — она действует только при рассасывании под языком. Если через 10 минут боль за грудиной не ушла, это не просто волнение — срочно вызывайте скорую (103)!",
+        en: "Special condition: Do not chew or swallow with water — it works only under the tongue. If chest pain lasts over 10 minutes, call 103 immediately!"
+    },
+    "нурофен": {
+        ru: "Особое условие: ни в коем случае не давайте суспензию на голодный желудок и не превышайте дозу по весу ребёнка. Нельзя при ветрянке, язве желудка и малышам младше 3 месяцев.",
+        en: "Special condition: Never give on an empty stomach and strictly follow weight dosage. Avoid during chickenpox and under 3 months of age."
+    },
+    "парацетамол": {
+        ru: "Особое условие: если вы уже выпили горячий порошок от простуды (Терафлю, Колдрекс и др.), пить Парацетамол сверху категорически нельзя — в порошках он уже есть, возникнет опасная передозировка для печени!",
+        en: "Special condition: Do not take if you already drank cold-relief powders (Theraflu, Coldrex) — they contain paracetamol and can cause liver overdose!"
+    },
+    "но-шпа": {
+        ru: "Особое условие: если боль в животе очень резкая, сопровождается температурой или рвотой — не глушите её спазмолитиками, сначала исключите аппендицит у врача. Также препарат может слегка снижать давление.",
+        en: "Special condition: If abdominal pain is sharp with fever or vomiting, see a doctor first to rule out appendicitis. May slightly lower blood pressure."
+    },
+    "цитрамон": {
+        ru: "Особое условие: из-за кофеина в составе препарат не стоит пить вечером перед сном (может вызвать бессонницу) и при повышенном артериальном давлении. Запрещён детям до 15 лет.",
+        en: "Special condition: Contains caffeine — avoid before bedtime (may cause insomnia) and if you have high blood pressure. Not for children under 15."
+    },
+    "смекта": {
+        ru: "Особое условие: Смекта работает как губка и впитывает не только токсины, но и другие таблетки. Если вы пьёте другие лекарства, делайте перерыв минимум 2 часа до или после Смекты.",
+        en: "Special condition: Smecta absorbs other medications too. Keep at least a 2-hour gap between Smecta and any other pills."
+    },
+    "супрастин": {
+        ru: "Особое условие: вызывает выраженную сонливость и замедляет реакцию. Категорически нельзя садиться за руль, работать со сложной техникой и совмещать с алкоголем.",
+        en: "Special condition: Causes strong drowsiness and slows reaction time. Never drive or consume alcohol after taking."
+    },
+    "ибупрофен": {
+        ru: "Особое условие: раздражает слизистую желудка, поэтому пить его можно только после еды. Если у вас гастрит, язва или бронхиальная астма — обязательно посоветуйтесь с врачом.",
+        en: "Special condition: Irritates stomach lining — always take after meals. Consult a doctor if you have ulcers or asthma."
+    },
+    "омепразол": {
+        ru: "Особое условие: капсулу нельзя вскрывать, разжёвывать или растворять в воде — защитная оболочка должна донести лекарство прямо до желудка.",
+        en: "Special condition: Never open, chew, or crush the capsule — swallow it whole with water."
+    },
+    "уголь": {
+        ru: "Особое условие: окрашивает стул в чёрный цвет (это нормально). Как и любой сорбент, снижает эффект других таблеток — принимайте с разницей в 2 часа.",
+        en: "Special condition: Turns stool black (harmless). Reduces effectiveness of other medications — keep a 2-hour interval."
+    },
+    "корвалол": {
+        ru: "Особое условие: содержит фенобарбитал, который вызывает привыкание при частом приёме и сильно тормозит внимание. Не подходит для ежедневного лечения сердца и запрещён водителям.",
+        en: "Special condition: Contains phenobarbital — causes dependence with frequent use and impairs driving ability."
+    },
+    "аспирин": {
+        ru: "Особое условие: разжижает кровь и повышает риск кровотечений, поэтому запрещён при язве желудка и перед удалением зубов. Детям до 15 лет при ОРВИ давать смертельно опасно!",
+        en: "Special condition: Thins blood — avoid with ulcers or before dental surgery. Dangerous for children under 15 with viral infections!"
+    },
+    "терафлю": {
+        ru: "Особое условие: содержит компоненты, вызывающие сонливость и сужение сосудов. Не садитесь за руль после приёма и не совмещайте с другими жаропонижающими.",
+        en: "Special condition: Causes drowsiness and raises blood pressure slightly. Do not drive or combine with other fever reducers."
+    },
+    "ацц": {
+        ru: "Особое условие: приём препарата после 18:00 вызовет сильное отхождение мокроты ночью и не даст спокойно спать. Пейте его только в первой половине дня.",
+        en: "Special condition: Taking after 6 PM causes nighttime coughing as mucus clears. Always take in the morning or afternoon."
+    },
+    "нитроглицерин": {
+        ru: "Особое условие: резкое расширение сосудов может вызвать сильное головокружение и падение давления. Принимать строго сидя или лёжа!",
+        en: "Special condition: Rapid blood vessel dilation can cause sudden dizziness. Always sit or lie down before taking!"
+    }
+};
+function buildNuanceText(medObj, lang) {
+    const data = medObj[lang];
+    const nameLower = data.name.toLowerCase();
+
+    for (const key in specialNuances) {
+        if (nameLower.includes(key)) {
+            return specialNuances[key][lang];
+        }
+    }
+
+    if (lang === 'ru') {
+        const sentences = data.info.split('.').map(s => s.trim()).filter(Boolean);
+        const restriction = sentences.find(s => /нельзя|запрещ|противопоказ|осторож|не превыш|врач/i.test(s));
+        if (restriction) {
+            return `Особое условие по применению «${data.name}»: ${restriction.toLowerCase()}. Не превышайте рекомендованную дозировку и обязательно проверьте срок годности на упаковке перед приёмом.`;
+        }
+        return `Особое условие по применению «${data.name}»: принимайте строго по схеме, не сочетайте без назначения с алкоголем и похожими по действию препаратами. Если симптомы не проходят за 2–3 дня — обратитесь к врачу.`;
+    } else {
+        return `Special condition for "${data.name}": follow exact dosage intervals, avoid alcohol, and check expiration date before use. Consult a doctor if symptoms persist over 2–3 days.`;
+    }
+}
+
+const renderBeforeNuance = renderApp;
+renderApp = function() {
+    renderBeforeNuance();
+    const currentMed = medicines[selectedIdx];
+    const divEl = document.getElementById('list-divider');
+    const lblNuance = document.getElementById('lbl-nuance');
+    const txtNuance = document.getElementById('txt-nuance');
+
+    if (divEl) {
+        divEl.textContent = currentLang === 'ru'
+            ? '📋 Выберите препарат из списка:'
+            : '📋 Select medication from list:';
+    }
+    if (lblNuance) {
+        lblNuance.textContent = currentLang === 'ru'
+            ? '⚠️ Особые условия и нюансы приёма'
+            : '⚠️ Special Conditions & Precautions';
+    }
+    if (txtNuance && currentMed) {
+        txtNuance.textContent = buildNuanceText(currentMed, currentLang);
+    }
+};
+
+renderApp();
+</script>
+<style>
+    .list-divider {
+        margin-top: 22px;
+        padding-top: 16px;
+        border-top: 3px solid #e2e8f0;
+        margin-bottom: 14px;
+        font-size: calc(15px * var(--scale));
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #475569;
+    }
+    .section-card.nuance {
+        background-color: #fff1f2;
+        border-color: #fecdd3;
+        margin-bottom: 16px;
+    }
+    .section-card.nuance .section-label {
+        color: #be123c;
+    }
+</style>
+
+<script>
+(function() {
+    const listBox = document.getElementById('med-list');
+    if (listBox && !document.getElementById('list-divider')) {
+        const divider = document.createElement('div');
+        divider.id = 'list-divider';
+        divider.className = 'list-divider';
+        divider.textContent = '📋 Выберите препарат из списка:';
+        const symBanner = document.getElementById('symptom-banner');
+        listBox.parentNode.insertBefore(divider, symBanner || listBox);
+    }
+
+    const howCard = document.querySelector('.section-card.dosage');
+    if (howCard && !document.getElementById('txt-nuance')) {
+        const nuanceCard = document.createElement('div');
+        nuanceCard.className = 'section-card nuance';
+        nuanceCard.innerHTML = `
+            <div class="section-label" id="lbl-nuance">⚠️ Особые условия и нюансы приёма</div>
+            <p class="section-text" id="txt-nuance"></p>
+        `;
+        howCard.parentNode.insertBefore(nuanceCard, howCard.nextSibling);
+    }
+})();
+const detailedNuances = {
+    "валидол": {
+        ru: "Особое условие: таблетку нельзя раскусывать и сразу запивать водой — она действует только при медленном рассасывании под языком. Если через 10 минут боль за грудиной не ушла, это не просто волнение — срочно вызывайте скорую (103)!",
+        en: "Special condition: Do not chew or swallow with water — works only under the tongue. Call 103 if chest pain lasts over 10 minutes!"
+    },
+    "нурофен": {
+        ru: "Особое условие: ни в коем случае не давайте суспензию на голодный желудок и не превышайте дозу по весу ребёнка. Запрещён малышам младше 3 месяцев, при язве желудка и при ветрянке.",
+        en: "Special condition: Never give on an empty stomach. Do not give to babies under 3 months or during chickenpox."
+    },
+    "парацетамол": {
+        ru: "Особое условие: если вы уже выпили горячий порошок от простуды (Терафлю, Колдрекс и др.), пить Парацетамол сверху категорически нельзя — в порошках он уже есть, возникнет опасная передозировка для печени!",
+        en: "Special condition: Do not combine with cold-relief powders (Theraflu, Coldrex) — they already contain paracetamol!"
+    },
+    "но-шпа": {
+        ru: "Особое условие: если боль в животе очень резкая, сопровождается температурой или рвотой — не глушите её таблетками, сначала исключите аппендицит у врача. Нельзя детям до 6 лет.",
+        en: "Special condition: Do not mask severe abdominal pain with fever/vomiting before seeing a doctor. Not for children under 6."
+    },
+    "цитрамон": {
+        ru: "Особое условие: из-за кофеина в составе препарат не стоит пить вечером перед сном (вызовет бессонницу) и при повышенном артериальном давлении. Запрещён детям до 15 лет и при язве желудка.",
+        en: "Special condition: Contains caffeine — avoid before bedtime (causes insomnia) and with high blood pressure. Not for kids under 15."
+    },
+    "смекта": {
+        ru: "Особое условие: Смекта работает как губка и впитывает не только токсины, но и другие лекарства. Если вы пьёте другие таблетки, делайте перерыв минимум 2 часа до или после Смекты.",
+        en: "Special condition: Keep at least a 2-hour gap between Smecta and any other pills, as it blocks their absorption."
+    },
+    "супрастин": {
+        ru: "Особое условие: вызывает выраженную сонливость и замедляет реакцию. Категорически нельзя садиться за руль, работать со сложной техникой и совмещать с алкоголем.",
+        en: "Special condition: Causes strong drowsiness — never drive or consume alcohol after taking."
+    },
+    "ибупрофен": {
+        ru: "Особое условие: сильно раздражает слизистую желудка, поэтому пить его на голодный желудок запрещено! Противопоказан при язве желудка, гастрите в обострении и аспириновой астме.",
+        en: "Special condition: Never take on an empty stomach! Avoid with stomach ulcers."
+    },
+    "омепразол": {
+        ru: "Особое условие: капсулу нельзя вскрывать, разжёвывать или растворять в воде — защитная оболочка должна донести лекарство прямо до желудка. Не подходит для мгновенного снятия разовой изжоги.",
+        en: "Special condition: Swallow whole — never open or chew the capsule."
+    },
+    "уголь": {
+        ru: "Особое условие: окрашивает стул в чёрный цвет (это норма). Как и любой сорбент, блокирует всасывание других таблеток — принимайте с разницей минимум в 2 часа.",
+        en: "Special condition: Turns stool black (normal). Keep a 2-hour gap from other pills."
+    },
+    "корвалол": {
+        ru: "Особое условие: содержит фенобарбитал, который вызывает привыкание при частом приёме и сильно тормозит внимание. Не подходит для ежедневного лечения сердца и запрещён водителям.",
+        en: "Special condition: Contains phenobarbital — causes dependence with frequent use and impairs driving ability."
+    },
+    "аспирин": {
+        ru: "Особое условие: разжижает кровь и повышает риск кровотечений, поэтому запрещён при язве желудка и перед удалением зубов. Детям до 15 лет при ОРВИ давать смертельно опасно!",
+        en: "Special condition: Thins blood — avoid with ulcers. Dangerous for children under 15 with viral infections!"
+    },
+    "терафлю": {
+        ru: "Особое условие: вызывает сонливость и слегка повышает давление. Не садитесь за руль после приёма и не совмещайте с другими жаропонижающими.",
+        en: "Special condition: Causes drowsiness. Do not drive or mix with Paracetamol!"
+    },
+    "ацц": {
+        ru: "Особое условие: приём препарата после 18:00 вызовет сильное отхождение мокроты ночью и не даст спокойно спать. Пейте его только в первой половине дня и не смешивайте с Синекодом.",
+        en: "Special condition: Never take after 6 PM and never combine with dry-cough suppressants!"
+    },
+    "нитроглицерин": {
+        ru: "Особое условие: резкое расширение сосудов может вызвать сильное головокружение и обморок. Принимать строго сидя или лёжа!",
+        en: "Special condition: Can cause sudden dizziness — always sit or lie down before taking!"
+    }
+};
+function getCustomNuance(medObj, lang) {
+    const data = medObj[lang];
+    const nameLow = data.name.toLowerCase();
+
+    for (const key in detailedNuances) {
+        if (nameLow.includes(key)) {
+            return detailedNuances[key][lang];
+        }
+    }
+
+    if (lang === 'ru') {
+        const parts = data.info.split('.').map(s => s.trim()).filter(Boolean);
+        const warningPart = parts.find(s => /нельзя|запрещ|противопоказ|осторож|не превыш|врач/i.test(s));
+        if (warningPart) {
+            return `Особое условие по применению «${data.name}»: ${warningPart.toLowerCase()}. Не превышайте рекомендованную дозировку и обязательно проверьте срок годности на упаковке перед приёмом.`;
+        }
+        return `Особое условие по применению «${data.name}»: принимайте строго по схеме, не сочетайте без назначения с алкоголем и похожими по действию препаратами. Если симптомы не проходят за 2–3 дня — обратитесь к врачу.`;
+    } else {
+        return `Special condition for "${data.name}": follow exact dosage intervals, avoid alcohol, and check expiration date before use. Consult a doctor if symptoms persist over 2–3 days.`;
+    }
+}
+
+const savedRenderApp = renderApp;
+renderApp = function() {
+    savedRenderApp();
+    const currentMed = medicines[selectedIdx];
+    const divEl = document.getElementById('list-divider');
+    const lblNuance = document.getElementById('lbl-nuance');
+    const txtNuance = document.getElementById('txt-nuance');
+
+    if (divEl) {
+        divEl.textContent = currentLang === 'ru'
+            ? '📋 Выберите препарат из списка:'
+            : '📋 Select medication from list:';
+    }
+    if (lblNuance) {
+        lblNuance.textContent = currentLang === 'ru'
+            ? '⚠️ Особые условия и нюансы приёма'
+            : '⚠️ Special Conditions & Precautions';
+    }
+    if (txtNuance && currentMed) {
+        txtNuance.textContent = getCustomNuance(currentMed, currentLang);
+    }
+};
+
+renderApp();
+</script>
+<script>
+(function() {
+    function fillNuanceBox() {
+        const titleEl = document.getElementById('med-name');
+        const infoEl = document.getElementById('txt-info');
+        const txtNuance = document.getElementById('txt-nuance');
+        if (!titleEl || !txtNuance) return;
+
+        const medName = titleEl.textContent.trim();
+        const nameLow = medName.toLowerCase();
+        const isEn = document.getElementById('btn-en') && document.getElementById('btn-en').classList.contains('active');
+        const lang = isEn ? 'en' : 'ru';
+
+        const divEl = document.getElementById('list-divider');
+        const lblNuance = document.getElementById('lbl-nuance');
+        if (divEl) divEl.textContent = isEn ? '📋 Select medication from list:' : '📋 Выберите препарат из списка:';
+        if (lblNuance) lblNuance.textContent = isEn ? '⚠️ Special Conditions & Precautions' : '⚠️ Особые условия и нюансы приёма';
+
+        if (typeof detailedNuances !== 'undefined') {
+            for (const key in detailedNuances) {
+                if (nameLow.includes(key)) {
+                    txtNuance.textContent = detailedNuances[key][lang];
+                    return;
+                }
+            }
+        }
+
+        const infoText = infoEl ? infoEl.textContent : '';
+        if (lang === 'ru') {
+            const parts = infoText.split('.').map(s => s.trim()).filter(Boolean);
+            const warn = parts.find(s => /нельзя|запрещ|противопоказ|осторож|не превыш|врач/i.test(s));
+            if (warn) {
+                txtNuance.textContent = `Особое условие по применению «${medName}»: ${warn.toLowerCase()}. Не превышайте рекомендованную дозировку и проверьте срок годности перед приёмом.`;
+            } else {
+                txtNuance.textContent = `Особое условие по применению «${medName}»: принимайте строго по схеме, не сочетайте без назначения с алкоголем и похожими по действию лекарствами. Если симптомы не проходят за 2–3 дня — обратитесь к врачу.`;
+            }
+        } else {
+            txtNuance.textContent = `Special condition for "${medName}": follow exact dosage intervals, avoid alcohol, and check expiration date before use.`;
+        }
+    }
+
+    fillNuanceBox();
+    const target = document.getElementById('med-name');
+    if (target) {
+        const obs = new MutationObserver(fillNuanceBox);
+        obs.observe(target, { childList: true, characterData: true, subtree: true });
+    }
+    document.addEventListener('click', () => setTimeout(fillNuanceBox, 30));
+})();
+</script>
+<script>
+(function() {
+    function updateClinicalReminder() {
+        const titleEl = document.getElementById('med-name');
+        const subEl = document.getElementById('med-sub');
+        const discEl = document.getElementById('ui-disc');
+        if (!titleEl || !discEl) return;
+
+        const name = titleEl.textContent.trim();
+        const sub = subEl ? subEl.textContent.toLowerCase() : '';
+        const nameLow = name.toLowerCase();
+        const isEn = document.getElementById('btn-en') && document.getElementById('btn-en').classList.contains('active');
+
+        if (isEn) {
+            discEl.textContent = `Important reminder for "${name}": most over-the-counter medications do not cure the underlying cause of a disease, they only relieve its symptoms. This service is not a doctor — consult a specialist if symptoms persist.`;
+            return;
+        }
+
+        const isCausal = /антибиотик|противовирус|антибактериальн|амоксициллин|азитромицин|ингавирин|кагоцел|ацикловир|энтерофурил/i.test(nameLow + ' ' + sub);
+        const isSupport = /витамин|магн|пробиотик|микрофлор|уход|заживлен|гигиен/i.test(nameLow + ' ' + sub);
+
+        if (isCausal) {
+            discEl.textContent = `Помните о препарате «${name}»: средство направлено на борьбу с возбудителем инфекции, но его должен назначать врач. Не прерывайте курс раньше времени и помните, что сайт не заменяет очный осмотр специалиста.`;
+        } else if (isSupport) {
+            discEl.textContent = `Помните о препарате «${name}»: это поддерживающее или вспомогательное средство. Оно помогает организму, но не заменяет полноценное лечение основной причины заболевания у врача.`;
+        } else {
+            discEl.textContent = `Помните: препарат «${name}» не устраняет саму причину болезни, а лишь временно снимает её симптомы! Данный сайт не заменяет врача — если симптомы возвращаются или не проходят, обязательно обратитесь к специалисту.`;
+        }
+    }
+
+    updateClinicalReminder();
+    const target = document.getElementById('med-name');
+    if (target) {
+        const obs = new MutationObserver(() => setTimeout(updateClinicalReminder, 15));
+        obs.observe(target, { childList: true, characterData: true, subtree: true });
+    }
+    document.addEventListener('click', () => setTimeout(updateClinicalReminder, 40));
+})();
+</script>
+<script>
+(function() {
+    const splitReplacements = [
+        {
+            match: /лоратадин.*кларитин/i,
+            items: [
+                {
+                    keys: "лоратадин аллергия насморк зуд чихание",
+                    ru: { tag: "🤧 Аллергия", name: "Лоратадин (таблетки 10 мг)", sub: "Действующее вещество: Лоратадин", info: "Блокатор H1-гистаминовых рецепторов. Снимает чихание, зуд глаз, насморк и крапивницу при аллергии без выраженной сонливости.", how: "Взрослым и детям старше 12 лет: по 1 таблетке (10 мг) 1 раз в сутки, запивая водой." },
+                    en: { tag: "🤧 Allergy", name: "Loratadine (10 mg)", sub: "Active: Loratadine", info: "Non-drowsy antihistamine for seasonal allergies and hives.", how: "Adults: 1 tablet once daily." }
+                },
+                {
+                    keys: "кларитин аллергия насморк зуд чихание",
+                    ru: { tag: "🤧 Аллергия", name: "Кларитин (таблетки / сироп)", sub: "Оригинальный лоратадин", info: "Оригинальный препарат на основе лоратадина с высокой степенью очистки для снятия сезонной и круглогодичной аллергии.", how: "Взрослым: по 1 таблетке 1 раз в день. Детям от 2 до 12 лет (весом до 30 кг) — по 5 мл сиропа 1 раз в сутки." },
+                    en: { tag: "🤧 Allergy", name: "Claritin (tablets / syrup)", sub: "Original Loratadine", info: "Relieves sneezing, itchy eyes, and skin rash.", how: "Adults: 1 tablet once daily." }
+                }
+            ]
+        },
+        {
+            match: /мезим.*панкреатин/i,
+            items: [
+                {
+                    keys: "мезим пищеварение тяжесть еда ферменты",
+                    ru: { tag: "🍽 Пищеварение", name: "Мезим Форте (таблетки)", sub: "Ферментный препарат в оболочке", info: "Содержит панкреатин в специальной защитной оболочке, помогающий переваривать жирную и тяжёлую пищу при переедании.", how: "По 1–2 таблетки прямо перед едой или во время еды, глотать целиком, не разжёвывая." },
+                    en: { tag: "🍽 Digestion", name: "Mezim Forte", sub: "Digestive enzymes", info: "Helps digest heavy and fatty meals.", how: "1–2 tablets during meals, swallow whole." }
+                },
+                {
+                    keys: "панкреатин пищеварение тяжесть поджелудочная ферменты",
+                    ru: { tag: "🍽 Пищеварение", name: "Панкреатин (таблетки 25 ЕД)", sub: "Базовые пищеварительные ферменты", info: "Восполняет нехватку ферментов поджелудочной железы (амилазы, липазы, протеазы), убирает тяжесть и вздутие после еды.", how: "По 1–2 таблетки во время еды 3 раза в день, запивая нещелочной жидкостью (водой или соком)." },
+                    en: { tag: "🍽 Digestion", name: "Pancreatin (25 U)", sub: "Pancreatic enzymes", info: "Supports pancreatic digestion and relieves heaviness.", how: "1–2 tablets with meals 3 times daily." }
+                }
+            ]
+        },
+        {
+            match: /терафлю.*колдрекс/i,
+            items: [
+                {
+                    keys: "терафлю простуда грипп температура порошок",
+                    ru: { tag: "🤧 Простуда", name: "Терафлю от гриппа и простуды", sub: "Состав: Парацетамол + Фенирамин + Фенилэфрин", info: "Сбивает температуру, сужает сосуды носа (убирает насморк) и уменьшает слезотечение за счёт антигистаминного компонента.", how: "Растворить 1 пакетик в стакане горячей воды. Пить каждые 4–6 часов, не более 3 пакетиков в сутки." },
+                    en: { tag: "🤧 Cold & Flu", name: "Theraflu Powder", sub: "Paracetamol + Pheniramine + Phenylephrine", info: "Relieves fever, runny nose, and body aches.", how: "1 packet in hot water every 4–6 hours. Max 3 daily." }
+                },
+                {
+                    keys: "колдрекс простуда грипп температура порошок",
+                    ru: { tag: "🤧 Простуда", name: "Колдрекс ХотРем (порошок)", sub: "Состав: Парацетамол 750 мг + Фенилэфрин + Витамин С", info: "Содержит повышенную дозу парацетамола (750 мг) и витамин С, но НЕ содержит снотворных антигистаминных компонентов.", how: "Высыпать 1 пакетик в кружку, залить горячей водой, размешать. Пить не чаще чем раз в 4 часа (максимум 4 пакетика в день)." },
+                    en: { tag: "🤧 Cold & Flu", name: "Coldrex HotRem", sub: "Paracetamol 750 mg + Vitamin C", info: "High-dose fever and nasal congestion relief without drowsy antihistamines.", how: "1 packet in hot water every 4 hours. Max 4 daily." }
+                }
+            ]
+        },
+        {
+            match: /лизобакт.*тантум|тантум.*стрепсилс|лизобакт.*стрепсилс/i,
+            items: [
+                {
+                    keys: "лизобакт горло боль ангина стоматит",
+                    ru: { tag: "🗣 Боль в горле", name: "Лизобакт (таблетки для рассасывания)", sub: "Состав: Лизоцим + Пиридоксин (Витамин B6)", info: "Природный фермент лизоцим разрушает бактерии и вирусы в горле, а витамин B6 заживляет слизистую. Разрешён беременным и детям с 3 лет.", how: "Медленно рассасывать по 2 таблетки 3–4 раза в день, не разжёвывая." },
+                    en: { tag: "🗣 Sore Throat", name: "Lysobact Lozenges", sub: "Lysozyme + Vitamin B6", info: "Natural antiseptic enzyme that heals throat mucosa.", how: "Dissolve 2 tablets slowly 3–4 times daily." }
+                },
+                {
+                    keys: "тантум верде горло боль ангина глотать спрей",
+                    ru: { tag: "🗣 Боль в горле", name: "Тантум Верде (спрей)", sub: "Действующее вещество: Бензидамин", info: "Местное нестероидное противовоспалительное средство: быстро «замораживает» и снимает острую боль при глотании и отёк горла.", how: "Взрослым: по 4–8 впрыскиваний каждые 1,5–3 часа после еды." },
+                    en: { tag: "🗣 Sore Throat", name: "Tantum Verde Spray", sub: "Active: Benzydamine", info: "Local anti-inflammatory spray that numbs throat pain.", how: "4–8 sprays every 1.5–3 hours." }
+                },
+                {
+                    keys: "стрепсилс горло боль першение леденцы",
+                    ru: { tag: "🗣 Боль в горле", name: "Стрепсилс (таблетки для рассасывания)", sub: "Состав: Амилметакрезол + Дихлорбензиловый спирт", info: "Антисептические леденцы, которые уничтожают микробы на поверхности миндалин и смягчают першение в горле.", how: "Рассасывать по 1 таблетке каждые 2–3 часа. Максимум 8 таблеток в сутки." },
+                    en: { tag: "🗣 Sore Throat", name: "Strepsils Lozenges", sub: "Dual antiseptic formula", info: "Fights throat bacteria and soothes irritation.", how: "1 lozenge every 2–3 hours. Max 8 daily." }
+                }
+            ]
+        },
+        {
+            match: /ацц.*мукалтин|мукалтин.*бромгексин/i,
+            items: [
+                {
+                    keys: "ацц кашель мокрота бронхит шипучий",
+                    ru: { tag: "🫁 Влажный кашель", name: "АЦЦ Лонг (600 мг)", sub: "Действующее вещество: Ацетилцистеин", info: "Мощно разрывает связи в густой вязкой мокроте, делая её жидкой для лёгкого откашливания при бронхите.", how: "Растворить 1 шипучую таблетку в стакане воды и выпить после завтрака 1 раз в день." },
+                    en: { tag: "🫁 Wet Cough", name: "ACC Long (600 mg)", sub: "Active: Acetylcysteine", info: "Breaks down thick bronchial mucus.", how: "1 effervescent tablet in water after breakfast." }
+                },
+                {
+                    keys: "мукалтин кашель мокрота алтей трава",
+                    ru: { tag: "🫁 Влажный кашель", name: "Мукалтин (таблетки 50 мг)", sub: "Растительный экстракт корня алтея", info: "Мягкое отхаркивающее средство на растительной основе: усиливает работу мерцательного эпителия бронхов и обволакивает горло.", how: "По 1–2 таблетки 2–3 раза в день перед едой (можно растворить в трети стакана тёплой воды)." },
+                    en: { tag: "🫁 Wet Cough", name: "Mukaltin (50 mg)", sub: "Marshmallow root extract", info: "Herbal expectorant that softens cough.", how: "1–2 tablets 2–3 times daily before meals." }
+                }
+            ]
+        },
+        {
+            match: /синекод.*ренгалин|синекод.*омнитус/i,
+            items: [
+                {
+                    keys: "синекод сухой кашель приступ ночной",
+                    ru: { tag: "🌬 Сухой кашель", name: "Синекод (капли / сироп)", sub: "Действующее вещество: Бутамират", info: "Прямо подавляет кашлевой центр в головном мозге, останавливая мучительный сухой «лающий» кашель без мокроты.", how: "Взрослым: по 15 мл сиропа 4 раза в день перед едой." },
+                    en: { tag: "🌬 Dry Cough", name: "Sinecod Syrup", sub: "Active: Butamirate", info: "Directly suppresses dry, barking cough.", how: "Adults: 15 ml 4 times daily before meals." }
+                },
+                {
+                    keys: "ренгалин кашель сухой влажный горло",
+                    ru: { tag: "🌬 Любой кашель", name: "Ренгалин (таблетки для рассасывания)", sub: "Регулятор кашлевого рефлекса", info: "Снимает отёк и спазм бронхов, уменьшая как сухой, так и остаточный влажный кашель при ОРВИ.", how: "По 1–2 таблетки 3 раза в день держать во рту до полного растворения вне приёма пищи." },
+                    en: { tag: "🌬 Cough Relief", name: "Rengalin", sub: "Cough reflex regulator", info: "Reduces bronchial spasm and coughing.", how: "Dissolve 1–2 tablets 3 times daily." }
+                }
+            ]
+        },
+        {
+            match: /називин.*отривин/i,
+            items: [
+                {
+                    keys: "називин нос заложен насморк капли спрей",
+                    ru: { tag: "👃 Насморк", name: "Називин (спрей / капли)", sub: "Действующее вещество: Оксиметазолин", info: "Сосудосуживающее средство длительного действия (до 12 часов): снимает отёк слизистой носа при насморке и синусите.", how: "По 1–2 впрыскивания в каждую ноздрю 2–3 раза в день." },
+                    en: { tag: "👃 Nasal Care", name: "Nasivin", sub: "Active: Oxymetazoline", info: "Long-acting (12h) nasal decongestant.", how: "1–2 sprays per nostril 2–3 times daily." }
+                },
+                {
+                    keys: "отривин нос заложен насморк капли спрей",
+                    ru: { tag: "👃 Насморк", name: "Отривин (спрей дозированный)", sub: "Действующее вещество: Ксилометазолин", info: "Начинает действовать через 2 минуты и освобождает носовое дыхание на 8–10 часов, часто содержит увлажняющие добавки.", how: "По 1 впрыскиванию в каждый носовой ход до 3 раз в сутки." },
+                    en: { tag: "👃 Nasal Care", name: "Otrivin Spray", sub: "Active: Xylometazoline", info: "Fast-acting (2 min) nasal spray.", how: "1 spray per nostril up to 3 times daily." }
+                }
+            ]
+        },
+        {
+            match: /линекс.*бифиформ/i,
+            items: [
+                {
+                    keys: "линекс пробиотик кишечник антибиотик микрофлора",
+                    ru: { tag: "🦠 Микрофлора", name: "Линекс Форте (капсулы)", sub: "Лактобактерии + Бифидобактерии", info: "Содержит живые молочнокислые бактерии для восстановления баланса микрофлоры кишечника после приёма антибиотиков.", how: "Взрослым: по 1 капсуле 1–2 раза в день во время еды, запивая прохладной водой." },
+                    en: { tag: "🦠 Gut Flora", name: "Linex Forte", sub: "Lactobacillus + Bifidobacterium", info: "Restores gut bacteria after antibiotics.", how: "1 capsule 1–2 times daily with cool water." }
+                },
+                {
+                    keys: "бифиформ пробиотик кишечник антибиотик диарея",
+                    ru: { tag: "🦠 Микрофлора", name: "Бифиформ (капсулы)", sub: "Бифидобактерии + Энтерококки", info: "Кишечнорастворимые капсулы с полезными бактериями, устойчивыми к кислоте желудка; эффективны при диарее и вздутии.", how: "По 2–3 капсулы в сутки независимо от приёма пищи." },
+                    en: { tag: "🦠 Gut Flora", name: "Bifiform Capsules", sub: "Enteric-coated probiotics", info: "Acid-resistant probiotics for diarrhea and bloating.", how: "2–3 capsules daily." }
+                }
+            ]
+        },
+        {
+            match: /фосфалюгель.*алмагель/i,
+            items: [
+                {
+                    keys: "фосфалюгель изжога желудок гастрит кислота",
+                    ru: { tag: "🥛 От изжоги", name: "Фосфалюгель (гель в пакетиках)", sub: "Действующее вещество: Алюминия фосфат", info: "Нейтрализует лишнюю кислоту и создаёт защитный слой на стенках желудка, не вымывая кальций и фосфор из организма.", how: "Размять пакетик и выпить 1–2 штуки в чистом виде (или развести в воде) 2–3 раза в день." },
+                    en: { tag: "🥛 Heartburn", name: "Phosphalugel", sub: "Aluminum phosphate gel", info: "Neutralizes stomach acid and coats mucosa.", how: "1–2 packets 2–3 times daily." }
+                },
+                {
+                    keys: "алмагель изжога желудок гастрит боль",
+                    ru: { tag: "🥛 От изжоги", name: "Алмагель (суспензия)", sub: "Алюминия гидроксид + Магния гидроксид", info: "Комбинация солей алюминия и магния быстро гасит изжогу и кислую отрыжку при гастрите и язвенной болезни.", how: "Взрослым: по 1–2 мерные ложки (5–10 мл) за 15 минут до еды 3–4 раза в день. Перед приёмом флакон взболтать!" },
+                    en: { tag: "🥛 Heartburn", name: "Almagel Suspension", sub: "Aluminum + Magnesium hydroxide", info: "Fast antacid relief for gastritis.", how: "5–10 ml 15 minutes before meals. Shake well!" }
+                }
+            ]
+        },
+        {
+            match: /полисорб.*энтеросгель/i,
+            items: [
+                {
+                    keys: "полисорб отравление аллергия токсины порошок",
+                    ru: { tag: "🛡 Сорбент", name: "Полисорб МП (порошок)", sub: "Кремния диоксид коллоидный", info: "Лёгкий белый порошок с огромной площадью сорбции: связывает токсины, аллергены и вирусы в просвете кишечника.", how: "Размешать 1 столовую ложку с горкой в половине стакана воды и сразу выпить (сухой порошок в рот не брать!)." },
+                    en: { tag: "🛡 Detox", name: "Polysorb MP", sub: "Colloidal silicon dioxide", info: "Binds toxins and allergens in the gut.", how: "Mix 1 tbsp in half a glass of water and drink immediately." }
+                },
+                {
+                    keys: "энтеросгель отравление аллергия паста желудок",
+                    ru: { tag: "🛡 Сорбент", name: "Энтеросгель (паста для приёма внутрь)", sub: "Полиметилсилоксана полигидрат", info: "Гелеобразный сорбент, который избирательно впитывает только вредные токсины и бактерии, не затрагивая витамины и микроэлементы.", how: "Взрослым: по 1 столовой ложке (22,5 г) 3 раза в день, запивая стаканом воды." },
+                    en: { tag: "🛡 Detox", name: "Enterosgel Paste", sub: "Organic silica gel", info: "Selectively absorbs toxins without removing vitamins.", how: "1 tbsp 3 times daily with a glass of water." }
+                }
+            ]
+        },
+        {
+            match: /пантенол.*бепантен/i,
+            items: [
+                {
+                    keys: "пантенол ожог загар кожа спрей",
+                    ru: { tag: "🩹 Ожоги", name: "Пантенол (спрей / пена)", sub: "Действующее вещество: Декспантенол", info: "Воздушная пена для бесконтактного нанесения на болезненные солнечные и бытовые ожоги, ускоряет регенерацию кожи.", how: "Встряхнуть баллон и распылить пену с расстояния 10–20 см на обожжённую кожу 2–4 раза в день." },
+                    en: { tag: "🩹 Burns", name: "Panthenol Foam Spray", sub: "Active: Dexpanthenol", info: "Touch-free soothing foam for sunburns and minor burns.", how: "Spray from 10–20 cm onto burned skin 2–4 times daily." }
+                },
+                {
+                    keys: "бепантен рана трещины сухость кожа крем мазь",
+                    ru: { tag: "🩹 Заживление кожи", name: "Бепантен (крем / мазь)", sub: "Декспантенол на ланолиновой основе", info: "Глубоко питает, смягчает и заживляет сухую трескающуюся кожу, ссадины и опрелости у взрослых и младенцев.", how: "Наносить тонким слоем на чистую сухую кожу 1–2 раза в день и слегка втирать." },
+                    en: { tag: "🩹 Skin Care", name: "Bepanthen Cream", sub: "Dexpanthenol + Lanolin", info: "Heals dry, cracked skin, chafing, and minor cuts.", how: "Apply thinly to clean skin 1–2 times daily." }
+                }
+            ]
+        },
+        {
+            match: /мирамистин.*хлоргексидин/i,
+            items: [
+                {
+                    keys: "мирамистин горло рана антисептик спрей",
+                    ru: { tag: "🧼 Антисептик", name: "Мирамистин (раствор 0,01%)", sub: "Бензилдиметил-миристоиламино-пропиламмоний", info: "Современный антисептик широкого спектра: уничтожает бактерии, вирусы и грибки, подходит для горла, носа и ран без жжения.", how: "Орошать горло 3–4 нажатиями распылителя 3–4 раза в день или промывать раны." },
+                    en: { tag: "🧼 Antiseptic", name: "Miramistin 0.01%", sub: "Broad-spectrum antiseptic", info: "Kills bacteria, viruses, and fungi without stinging.", how: "Spray throat or rinse wounds 3–4 times daily." }
+                },
+                {
+                    keys: "хлоргексидин рана порез антисептик",
+                    ru: { tag: "🧼 Антисептик", name: "Хлоргексидин (раствор 0,05%)", sub: "Хлоргексидина биглюконат", info: "Доступный кожный антисептик для быстрой обработки царапин, ссадин, порезов и рук.", how: "Нанести раствор на ватный диск или прямо на рану на 1–2 минуты. Не глотать и беречь от попадания в глаза!" },
+                    en: { tag: "🧼 Antiseptic", name: "Chlorhexidine 0.05%", sub: "Skin disinfectant", info: "Disinfects cuts, scrapes, and skin.", how: "Apply to wound for 1–2 minutes. For external use only." }
+                }
+            ]
+        },
+        {
+            match: /аква марис.*аквалор/i,
+            items: [
+                {
+                    keys: "аква марис нос насморк увлажнение море",
+                    ru: { tag: "🌊 Увлажнение носа", name: "Аква Марис (спрей назальный)", sub: "Стерильная вода Адриатического моря", info: "Мягко увлажняет пересушенную слизистую носа в отопительный сезон и очищает от пыли и аллергенов.", how: "По 1–2 впрыскивания в каждую ноздрю 3–4 раза в день." },
+                    en: { tag: "🌊 Nasal Care", name: "Aqua Maris Spray", sub: "Adriatic sea water", info: "Moisturizes dry nasal passages and rinses allergens.", how: "1–2 sprays per nostril 3–4 times daily." }
+                },
+                {
+                    keys: "аквалор нос промывание насморк душ",
+                    ru: { tag: "🌊 Промывание носа", name: "Аквалор (назальный душ)", sub: "Изотоническая / гипертоническая морская вода", info: "Баллон под давлением с насадкой-душем для глубокого промывания носовых пазух при густом насморке и заложенности.", how: "Наклонить голову набок, ввести наконечник в верхнюю ноздрю, промыть несколько секунд, затем высморкаться." },
+                    en: { tag: "🌊 Nasal Wash", name: "Aqualor Nasal Shower", sub: "Pressurized sea water", info: "Deeply flushes nasal sinuses during heavy congestion.", how: "Tilt head sideways, flush nostril, and blow nose." }
+                }
+            ]
+        },
+        {
+            match: /вольтарен.*долгит/i,
+            items: [
+                {
+                    keys: "вольтарен спина поясница сустав гель боль",
+                    ru: { tag: "🦴 Спина и суставы", name: "Вольтарен Эмульгель (1% / 2%)", sub: "Действующее вещество: Диклофенак", info: "Мощный противовоспалительный гель для снятия острой боли в пояснице, шее, коленях и при радикулите.", how: "Наносить тонким слоем на больное место 2 раза в день (утром и вечером), не втирая с силой." },
+                    en: { tag: "🦴 Back & Joints", name: "Voltaren Emulgel", sub: "Active: Diclofenac", info: "Strong anti-inflammatory gel for back and joint pain.", how: "Apply thinly twice daily." }
+                },
+                {
+                    keys: "долгит ушиб растяжение мышцы синяк крем",
+                    ru: { tag: "🏃 Ушибы и растяжения", name: "Долгит (крем / гель 5%)", sub: "Действующее вещество: Ибупрофен", info: "Снимает боль, отёк и воспаление при спортивных травмах, ушибах, растяжении связок и мышечной боли.", how: "Выдавить полоску геля 4–5 см и втирать лёгкими движениями 3–4 раза в день." },
+                    en: { tag: "🏃 Sprains & Bruises", name: "Dolgit Gel 5%", sub: "Active: Ibuprofen", info: "Relieves pain and swelling from bruises and sprains.", how: "Rub in 3–4 times daily." }
+                }
+            ]
+        },
+        {
+            match: /андипал.*каптоприл/i,
+            items: [
+                {
+                    keys: "андипал давление затылок голова спазм",
+                    ru: { tag: "❤️ Умеренное давление", name: "Андипал (таблетки)", sub: "Метамизол + Бендазол + Папаверин + Фенобарбитал", info: "Комбинированный препарат при умеренном повышении давления, вызванном спазмом сосудов и стрессом.", how: "Взрослым: по 1 таблетке 2–3 раза в день после еды, запивая водой." },
+                    en: { tag: "❤️ Mild BP Spike", name: "Andipal Tablets", sub: "Combined antispasmodic", info: "For mild blood pressure spikes caused by vessel spasms.", how: "Adults: 1 tablet 2–3 times daily after meals." }
+                },
+                {
+                    keys: "каптоприл капотен давление криз гипертония",
+                    ru: { tag: "🚨 Резкий скачок давления", name: "Каптоприл / Капотен (25 мг)", sub: "Ингибитор АПФ (скорая помощь)", info: "Препарат экстренной помощи для быстрого снижения резко подскочившего артериального давления.", how: "Положить 1 таблетку (25 мг) под язык в положении сидя до полного рассасывания. Через 30 минут повторно измерить давление." },
+                    en: { tag: "🚨 High BP Emergency", name: "Captopril (25 mg)", sub: "ACE inhibitor", info: "Fast-acting tablet for sudden high blood pressure spikes.", how: "Place 1 tablet under tongue while sitting." }
+                }
+            ]
+        }
+    ];
+    const extraSpecificNuances = {
+        "кларитин": {
+            ru: "Особое условие: несмотря на мягкое действие, в редких случаях может вызывать лёгкую усталость — проверьте индивидуальную реакцию перед вождением автомобиля. Не превышайте 1 таблетку в сутки.",
+            en: "Special condition: May rarely cause mild fatigue — check your reaction before driving. Max 1 tablet daily."
+        },
+        "панкреатин": {
+            ru: "Особое условие: таблетки нельзя разжёвывать, иначе желудочный сок разрушит ферменты до того, как они попадут в кишечник. Запрещён при остром панкреатите!",
+            en: "Special condition: Swallow whole — chewing destroys the enzymes in stomach acid. Contraindicated in acute pancreatitis!"
+        },
+        "колдрекс": {
+            ru: "Особое условие: содержит 750 мг парацетамола в одном пакетике — категорически нельзя пить вместе с таблетками Парацетамола или алкоголем из-за риска токсического поражения печени!",
+            en: "Special condition: Contains 750 mg paracetamol per packet — never mix with Paracetamol pills or alcohol!"
+        },
+        "лизобакт": {
+            ru: "Особое условие: таблетку нужно именно медленно рассасывать, а не глотать целиком. После рассасывания не пейте воду и не ешьте минимум 30 минут.",
+            en: "Special condition: Dissolve slowly in mouth, do not swallow whole. Avoid food/water for 30 minutes after."
+        },
+        "тантум верде": {
+            ru: "Особое условие: при распылении в горло задержите дыхание на пару секунд, чтобы спрей не попал в дыхательные пути. Не есть и не пить 30 минут после орошения.",
+            en: "Special condition: Hold breath briefly while spraying. Do not eat or drink for 30 minutes after."
+        },
+        "мукалтин": {
+            ru: "Особое условие: при попадании в желудок может вызывать лёгкое ощущение тяжести у людей с гастритом — в таком случае таблетку лучше заранее растворить в тёплой воде.",
+            en: "Special condition: Dissolve in warm water before drinking if you have a sensitive stomach or gastritis."
+        },
+        "ренгалин": {
+            ru: "Особое условие: нельзя совмещать с муколитиками (АЦЦ, Лазолваном), если кашель уже стал влажным с обильной мокротой.",
+            en: "Special condition: Do not combine with mucus-thinning drugs once cough becomes wet."
+        },
+        "линекс": {
+            ru: "Особое условие: никогда не запивайте капсулы горячим чаем или кофе — высокая температура мгновенно убьёт полезные живые бактерии!",
+            en: "Special condition: Never take capsules with hot drinks — heat kills the live probiotic bacteria!"
+        },
+        "бифиформ": {
+            ru: "Особое условие: если вы пьёте антибиотики, делайте перерыв между приёмом антибиотика и Бифиформа минимум 2 часа, иначе антибиотик уничтожит бактерии из капсулы.",
+            en: "Special condition: Keep a 2-hour gap from antibiotics so the antibiotic doesn't destroy the probiotics."
+        },
+        "фосфалюгель": {
+            ru: "Особое условие: как и все антациды, снижает всасывание других таблеток — принимайте его с интервалом минимум 2 часа от любых других лекарств.",
+            en: "Special condition: Keep at least a 2-hour gap from other medications."
+        },
+        "алмагель": {
+            ru: "Особое условие: при длительном приёме может вызывать запоры и вымывать фосфор из организма. Не принимайте дольше 10–14 дней без назначения врача.",
+            en: "Special condition: Prolonged use may cause constipation. Do not use longer than 14 days without a doctor."
+        },
+        "полисорб": {
+            ru: "Особое условие: строго запрещено принимать сухой порошок в рот без воды — это может вызвать раздражение слизистой и спазм дыхательных путей!",
+            en: "Special condition: Never swallow dry powder without dissolving in water first!"
+        },
+        "энтеросгель": {
+            ru: "Особое условие: обязательно запивайте пасту достаточным количеством воды, иначе при обезвоживании препарат может спровоцировать запор.",
+            en: "Special condition: Drink plenty of water with the paste to avoid constipation."
+        },
+        "бепантен": {
+            ru: "Особое условие: предназначен только для наружного нанесения на кожу; нельзя наносить на мокнущие инфицированные раны с гноем.",
+            en: "Special condition: External use only; do not apply to infected, oozing wounds."
+        },
+        "мирамистин": {
+            ru: "Особое условие: не имеет вкуса и запаха, поэтому не перепутайте флакон с обычной водой и храните в недоступном для детей месте.",
+            en: "Special condition: Tasteless and odorless — keep clearly labeled and away from children."
+        },
+        "хлоргексидин": {
+            ru: "Особое условие: нельзя использовать для промывания глаз и ушей, а также категорически запрещено глотать! При случайном проглатывании выпейте воды и активированный уголь.",
+            en: "Special condition: Keep away from eyes and ears; do not swallow!"
+        },
+        "аквалор": {
+            ru: "Особое условие: детям до 2 лет промывание носа под давлением нужно проводить строго в положении лёжа на боку, а не на спине, чтобы вода не попала в среднее ухо.",
+            en: "Special condition: For toddlers under 2, flush while lying on their side, never flat on their back."
+        },
+        "долгит": {
+            ru: "Особое условие: не наносите гель под тугую герметичную повязку (плёнку) и избегайте попадания прямых солнечных лучей на обработанный участок кожи.",
+            en: "Special condition: Do not cover with airtight bandages and avoid direct sunlight on treated skin."
+        },
+        "каптоприл": {
+            ru: "Особое условие: может вызвать резкое падение давления и головокружение при вставании! Принимайте строго сидя и не вставайте резко 20–30 минут. Если давление выше 180 — звоните 103!",
+            en: "Special condition: Can cause sudden blood pressure drop and dizziness — remain seated for 20–30 minutes after taking!"
+        }
+    };
+
+    if (typeof detailedNuances !== 'undefined') {
+        Object.assign(detailedNuances, extraSpecificNuances);
+    }
+
+    for (let i = medicines.length - 1; i >= 0; i--) {
+        const name = medicines[i].ru.name;
+        const foundRule = splitReplacements.find(r => r.match.test(name));
+        if (foundRule) {
+            medicines.splice(i, 1, ...foundRule.items);
+        }
+    }
+
+    if (selectedIdx >= medicines.length) {
+        selectedIdx = 0;
+    }
+    if (typeof renderApp === 'function') {
+        renderApp();
+    }
+})();
+</script>
+<script>
+(function() {
+    const exactClinicalDatabase = {
+        "аммиака": {
+            ru: {
+                info: "Средство для рефлекторной стимуляции дыхания при обмороке и предобморочном состоянии (только для вдыхания паров).",
+                how: "Смочить небольшой кусочек ваты или бинта раствором и осторожно поднести к ноздрям человека на 1–2 секунды на расстоянии 2–3 см.",
+                nuance: "Особое условие: КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО принимать внутрь (вызывает тяжёлый химический ожог пищевода и желудка)! Не подносите флакон или ватку вплотную к носу и не держите дольше 2 секунд — резкий вдох паров может вызвать рефлекторную остановку дыхания."
+            },
+            en: {
+                info: "Reflex respiratory stimulant for fainting (for vapor inhalation only).",
+                how: "Moisten a small cotton ball and hold it 2–3 cm from the nostrils for 1–2 seconds.",
+                nuance: "Special condition: NEVER swallow (causes severe chemical burns)! Do not hold too close or longer than 2 seconds to avoid reflex respiratory arrest."
+            }
+        },
+        "отипакс": {
+            ru: {
+                nuance: "Особое условие: средство применяется ТОЛЬКО местно в ухо (не глотать!). Категорически запрещено закапывать при повреждении барабанной перепонки и если из уха течёт жидкость или гной. Перед закапыванием согрейте флакон в ладони — холодные капли вызывают сильное головокружение."
+            },
+            en: {
+                nuance: "Special condition: For ear use ONLY! Never use if the eardrum is perforated or fluid is draining from the ear. Warm bottle in hand before use."
+            }
+        },
+        "сульфацил": {
+            ru: {
+                nuance: "Особое условие: глазные капли предназначены только для закапывания в конъюнктивальный мешок. Не касайтесь кончиком пипетки ресниц или поверхности глаза, чтобы не занести инфекцию во флакон. После вскрытия хранить не более 28 дней."
+            },
+            en: {
+                nuance: "Special condition: Ophthalmic use only. Do not touch the dropper tip to the eye or lashes. Discard 28 days after opening."
+            }
+        },
+        "панангин": {
+            ru: {
+                nuance: "Особое условие: избыток калия в крови так же опасен для сердца, как и его нехватка! Не принимайте препарат при тяжёлых заболеваниях почек и не сочетайте с калийсберегающими мочегонными без контроля врача."
+            },
+            en: {
+                nuance: "Special condition: Excess potassium can affect heart rhythm. Avoid with severe kidney disease."
+            }
+        },
+        "кардиомагнил": {
+            ru: {
+                nuance: "Особое условие: это препарат для длительной профилактики тромбов, а не для снятия боли или температуры. Разжижает кровь — запрещён при язве желудка, склонности к кровотечениям и в последнем триместре беременности."
+            },
+            en: {
+                nuance: "Special condition: Daily blood-thinner for clot prevention, not a painkiller. Avoid with stomach ulcers or bleeding risk."
+            }
+        },
+        "метформин": {
+            ru: {
+                nuance: "Особое условие: рецептурный препарат для снижения сахара. Принимать строго во время или сразу после еды, чтобы избежать тошноты и расстройства желудка. Нельзя самостоятельно менять дозу и совмещать с алкоголем (риск лактоацидоза)."
+            },
+            en: {
+                nuance: "Special condition: Prescription diabetes medication. Take with meals to reduce stomach upset and strictly avoid alcohol."
+            }
+        },
+        "амлодипин": {
+            ru: {
+                nuance: "Особое условие: препарат накопительного действия — максимальный эффект развивается через несколько дней регулярного приёма. Не пытайтесь сбить им резкий гипертонический криз, выпивая несколько таблеток сразу (давление может упасть слишком сильно)."
+            },
+            en: {
+                nuance: "Special condition: Gradual 24-hour blood pressure control — never take extra pills for sudden spikes."
+            }
+        },
+        "азитромицин": {
+            ru: {
+                nuance: "Особое условие: рецептурный антибиотик — бесполезен при обычной вирусной простуде (ОРВИ) и гриппе! Даже если стало легче на 2-й день, обязательно допейте весь назначенный врачом курс, иначе бактерии выработают устойчивость."
+            },
+            en: {
+                nuance: "Special condition: Prescription antibiotic — useless against viruses/flu. Always finish the full prescribed course."
+            }
+        },
+        "ацикловир": {
+            ru: {
+                nuance: "Особое условие: противовирусное средство против герпеса. Мазь наносите только чистой ватной палочкой (не пальцами, чтобы не перенести вирус на глаза и другие участки кожи) и строго для наружного применения."
+            },
+            en: {
+                nuance: "Special condition: Apply cream with a cotton swab, not bare fingers, to avoid spreading the virus."
+            }
+        },
+        "троксерутин": {
+            ru: {
+                nuance: "Особое условие: гель предназначен исключительно для наружного нанесения на неповреждённую кожу ног. Не втирайте его в открытые раны, ссадины или трофические язвы."
+            },
+            en: {
+                nuance: "Special condition: External gel only — never apply to open wounds, cuts, or skin ulcers."
+            }
+        },
+        "магне": {
+            ru: {
+                nuance: "Особое условие: витаминно-минеральный комплекс. Если вы принимаете препараты железа или кальция, делайте перерыв минимум 2–3 часа между ними и магнием, иначе они помешают усвоению друг друга."
+            },
+            en: {
+                nuance: "Special condition: Keep a 2–3 hour gap from iron or calcium supplements for proper absorption."
+            }
+        },
+        "аквадетрим": {
+            ru: {
+                nuance: "Особое условие: жирорастворимый витамин — лучше всего усваивается утром во время завтрака, содержащего полезные жиры. Не превышайте профилактическую дозу без сдачи анализа крови на витамин D, так как передозировка токсична."
+            },
+            en: {
+                nuance: "Special condition: Take in the morning with food containing fats. Do not exceed daily dose without blood testing."
+            }
+        },
+        "валериан": {
+            ru: {
+                nuance: "Особое условие: растительное средство действует мягко и не снимает острый стресс мгновенно (эффект накапливается за 1–2 недели). При длительном приёме в больших дозах может вызывать сонливость и снижение концентрации внимания."
+            },
+            en: {
+                nuance: "Special condition: Mild cumulative herbal effect. High doses may cause drowsiness."
+            }
+        },
+        "мелатонин": {
+            ru: {
+                nuance: "Особое условие: после приёма таблетки нужно сразу лечь в кровать и выключить яркий свет и экран телефона — яркий свет разрушает действие мелатонина. Не сочетайте со снотворными и алкоголем."
+            },
+            en: {
+                nuance: "Special condition: Turn off bright lights and phone screens right after taking, as light blocks melatonin."
+            }
+        },
+        "глюкоза": {
+            ru: {
+                nuance: "Особое условие: средство быстрой углеводной поддержки при упадке сил или снижении сахара. Категорически противопоказано людям с сахарным диабетом без контроля уровня глюкозы в крови!"
+            },
+            en: {
+                nuance: "Special condition: Rapid sugar source — contraindicated in diabetes unless treating confirmed hypoglycemia."
+            }
+        },
+        "регидрон": {
+            ru: {
+                nuance: "Особое условие: готовый раствор нельзя кипятить и нельзя добавлять в него сахар, сок или мёд (это нарушит баланс солей). Хранить разведённый раствор в холодильнике не более 24 часов."
+            },
+            en: {
+                nuance: "Special condition: Never add sugar or juice to the solution. Store refrigerated for up to 24 hours."
+            }
+        },
+        "фенистил": {
+            ru: {
+                nuance: "Особое условие: гель наносите только наружно на небольшие участки кожи. После нанесения геля на открытые участки тела избегайте прямых солнечных лучей. Капли внутрь у малышей могут вызывать сонливость."
+            },
+            en: {
+                nuance: "Special condition: Apply gel externally to small skin areas and avoid direct sunlight on treated skin."
+            }
+        },
+        "синекод": {
+            ru: {
+                nuance: "Особое условие: подавляет кашлевой рефлекс — как только кашель стал влажным и начала отходить мокрота, препарат нужно сразу отменить, иначе мокрота застоится в бронхах!"
+            },
+            en: {
+                nuance: "Special condition: Stop immediately once cough becomes wet with mucus to prevent bronchial congestion!"
+            }
+        }
+    };
+    medicines.forEach(med => {
+        const ruLow = med.ru.name.toLowerCase();
+        for (const key in exactClinicalDatabase) {
+            if (ruLow.includes(key)) {
+                const patch = exactClinicalDatabase[key];
+                if (patch.ru.info) med.ru.info = patch.ru.info;
+                if (patch.ru.how) med.ru.how = patch.ru.how;
+                if (patch.en && patch.en.info) med.en.info = patch.en.info;
+                if (patch.en && patch.en.how) med.en.how = patch.en.how;
+            }
+        }
+    });
+
+    function getSmartFormNuance() {
+        const titleEl = document.getElementById('med-name');
+        const txtNuance = document.getElementById('txt-nuance');
+        if (!titleEl || !txtNuance) return;
+
+        const medName = titleEl.textContent.trim();
+        const nameLow = medName.toLowerCase();
+        const isEn = document.getElementById('btn-en') && document.getElementById('btn-en').classList.contains('active');
+        const lang = isEn ? 'en' : 'ru';
+
+        for (const key in exactClinicalDatabase) {
+            if (nameLow.includes(key) && exactClinicalDatabase[key][lang] && exactClinicalDatabase[key][lang].nuance) {
+                txtNuance.textContent = exactClinicalDatabase[key][lang].nuance;
+                return;
+            }
+        }
+
+        if (typeof detailedNuances !== 'undefined') {
+            for (const key in detailedNuances) {
+                if (nameLow.includes(key)) {
+                    txtNuance.textContent = detailedNuances[key][lang];
+                    return;
+                }
+            }
+        }
+
+        if (lang === 'ru') {
+            if (/гель|мазь|крем/i.test(nameLow)) {
+                txtNuance.textContent = `Особое условие для «${medName}»: препарат предназначен ТОЛЬКО для наружного нанесения на неповреждённую кожу (не глотать!). Не наносите на открытые раны и слизистые, после применения вымойте руки с мылом.`;
+            } else if (/капли|глаз|ушн/i.test(nameLow)) {
+                txtNuance.textContent = `Особое условие для «${medName}»: средство для местного закапывания (не для приёма внутрь). Не касайтесь кончиком флакона кожи или слизистой, соблюдайте срок хранения после вскрытия.`;
+            } else if (/спрей|раствор|ингаляц/i.test(nameLow)) {
+                txtNuance.textContent = `Особое условие для «${medName}»: используйте строго по инструкции для местного орошения или промывания. Не превышайте кратность и длительность применения без консультации врача.`;
+            } else if (/антибиотик|амоксициллин|азитромицин/i.test(nameLow)) {
+                txtNuance.textContent = `Особое условие для «${medName}»: рецептурный антибактериальный препарат. Применяется только по назначению врача при бактериальной инфекции, курс необходимо допить до конца.`;
+            } else {
+                txtNuance.textContent = `Особое условие для «${medName}»: соблюдайте точную дозировку и возрастные ограничения, не совмещайте с алкоголем и похожими по составу лекарствами. При отсутствии эффекта в течение 2–3 дней обратитесь к врачу.`;
+            }
+        }
+    }
+
+    getSmartFormNuance();
+    const target = document.getElementById('med-name');
+    if (target) {
+        const obs = new MutationObserver(() => setTimeout(getSmartFormNuance, 35));
+        obs.observe(target, { childList: true, characterData: true, subtree: true });
+    }
+    document.addEventListener('click', () => setTimeout(getSmartFormNuance, 50));
+})();
+</script>
+<style>
+    .controls {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .ctrl-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+    .ctrl-group-label {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+    }
+    .ctrl-group-btns {
+        display: flex;
+        gap: 5px;
+    }
+    .ctrl-sep {
+        width: 2px;
+        height: 36px;
+        background-color: #cbd5e1;
+        border-radius: 2px;
+    }
+</style>
+
+<script>
+(function() {
+    const controlsEl = document.querySelector('.controls');
+    if (!controlsEl || document.getElementById('grp-font')) return;
+
+    const btns = Array.from(controlsEl.querySelectorAll('.ctrl-btn'));
+    if (btns.length < 4) return;
+
+    controlsEl.innerHTML = '';
+
+    const fontGroup = document.createElement('div');
+    fontGroup.id = 'grp-font';
+    fontGroup.className = 'ctrl-group';
+    fontGroup.innerHTML = '<span class="ctrl-group-label" id="lbl-grp-font">Шрифт</span><div class="ctrl-group-btns"></div>';
+    fontGroup.querySelector('.ctrl-group-btns').append(btns[0], btns[1]);
+
+    const sep = document.createElement('div');
+    sep.className = 'ctrl-sep';
+
+    const langGroup = document.createElement('div');
+    langGroup.id = 'grp-lang';
+    langGroup.className = 'ctrl-group';
+    langGroup.innerHTML = '<span class="ctrl-group-label" id="lbl-grp-lang">Язык</span><div class="ctrl-group-btns"></div>';
+    langGroup.querySelector('.ctrl-group-btns').append(btns[2], btns[3]);
+
+    controlsEl.append(fontGroup, sep, langGroup);
+
+    function syncGroupLabels() {
+        const isEn = btns[3].classList.contains('active');
+        const lf = document.getElementById('lbl-grp-font');
+        const ll = document.getElementById('lbl-grp-lang');
+        if (lf) lf.textContent = isEn ? 'Text size' : 'Шрифт';
+        if (ll) ll.textContent = isEn ? 'Language' : 'Язык';
+    }
+
+    btns[2].addEventListener('click', () => setTimeout(syncGroupLabels, 20));
+    btns[3].addEventListener('click', () => setTimeout(syncGroupLabels, 20));
+})();
+</script>
+<style>
+    @media (max-width: 768px) {
+        body {
+            padding: 8px;
+        }
+        .layout {
+            gap: 12px;
+        }
+        .panel {
+            padding: 14px;
+            border-radius: 16px;
+        }
+        .top-bar {
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .search-input {
+            padding: 12px 14px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .symptom-chips {
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .chip-btn {
+            padding: 10px 6px;
+            font-size: 14px;
+            border-radius: 10px;
+        }
+        .list-divider {
+            margin-top: 10px;
+            padding-top: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .med-list {
+            max-height: 185px;
+            gap: 6px;
+        }
+        .med-btn {
+            padding: 11px 12px;
+            font-size: 15px;
+            border-radius: 10px;
+        }
+        .tag {
+            font-size: 11px;
+            padding: 3px 7px;
+        }
+    }
+</style>
+
+<script>
+(function() {
+    const listBox = document.getElementById('med-list');
+    if (listBox) {
+        listBox.addEventListener('click', function(e) {
+            const btn = e.target.closest('.med-btn');
+            if (btn && window.innerWidth <= 768) {
+                setTimeout(() => {
+                    const panels = document.querySelectorAll('.panel');
+                    if (panels[1]) {
+                        panels[1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 60);
+            }
+        });
+    }
+})();
+</script>
+<style>
+    .mobile-tabs {
+        display: none;
+    }
+    .back-to-list-btn {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        body {
+            padding: 8px;
+        }
+        .layout {
+            display: block;
+        }
+        .panel {
+            padding: 14px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+        }
+        .top-bar {
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+        .logo {
+            font-size: 20px;
+        }
+        .controls {
+            gap: 8px;
+        }
+        .ctrl-btn {
+            padding: 6px 10px;
+            font-size: 14px;
+        }
+        .mobile-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .mob-tab-btn {
+            padding: 12px 8px;
+            font-size: 15px;
+            font-weight: 800;
+            border: 2px solid #0b5ed7;
+            background: #ffffff;
+            color: #0b5ed7;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .mob-tab-btn.active {
+            background: #0b5ed7;
+            color: #ffffff;
+        }
+        .search-input {
+            padding: 12px 14px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .symptom-chips {
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .chip-btn {
+            padding: 10px 6px;
+            font-size: 14px;
+            border-radius: 10px;
+        }
+        .list-divider {
+            margin-top: 10px;
+            padding-top: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .med-list {
+            max-height: 55vh;
+            gap: 8px;
+        }
+        .med-btn {
+            padding: 12px 14px;
+            font-size: 16px;
+            border-radius: 12px;
+        }
+        .tag {
+            font-size: 11px;
+            padding: 3px 8px;
+        }
+        .panel.mob-hidden {
+            display: none;
+        }
+        .back-to-list-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            background: #eff6ff;
+            color: #084298;
+            border: 2px solid #bfdbfe;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+        }
+        h2 {
+            font-size: 21px;
+        }
+        .section-card {
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .section-text {
+            font-size: 16px;
+        }
+    }
+</style>
+<script>
+(function() {
+    const panels = document.querySelectorAll('.panel');
+    if (panels.length < 2) return;
+
+    const leftPanel = panels[0];
+    const rightPanel = panels[1];
+
+    const tabsBar = document.createElement('div');
+    tabsBar.className = 'mobile-tabs';
+    tabsBar.innerHTML = `
+        <button class="mob-tab-btn active" id="tab-btn-search">🔍 Поиск и список</button>
+        <button class="mob-tab-btn" id="tab-btn-info">📘 Инструкция</button>
+    `;
+    leftPanel.parentNode.insertBefore(tabsBar, leftPanel);
+
+    const backBtn = document.createElement('button');
+    backBtn.className = 'back-to-list-btn';
+    backBtn.id = 'mob-back-btn';
+    backBtn.textContent = '← Вернуться к выбору препарата';
+    rightPanel.insertBefore(backBtn, rightPanel.firstChild);
+
+    function showMobileTab(tabName) {
+        const btnSearch = document.getElementById('tab-btn-search');
+        const btnInfo = document.getElementById('tab-btn-info');
+        if (window.innerWidth > 768) {
+            leftPanel.classList.remove('mob-hidden');
+            rightPanel.classList.remove('mob-hidden');
+            return;
+        }
+        if (tabName === 'info') {
+            leftPanel.classList.add('mob-hidden');
+            rightPanel.classList.remove('mob-hidden');
+            btnSearch.classList.remove('active');
+            btnInfo.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            rightPanel.classList.add('mob-hidden');
+            leftPanel.classList.remove('mob-hidden');
+            btnInfo.classList.remove('active');
+            btnSearch.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    document.getElementById('tab-btn-search').onclick = () => showMobileTab('search');
+    document.getElementById('tab-btn-info').onclick = () => showMobileTab('info');
+    backBtn.onclick = () => showMobileTab('search');
+
+    const medList = document.getElementById('med-list');
+    if (medList) {
+        medList.addEventListener('click', function(e) {
+            if (e.target.closest('.med-btn') && window.innerWidth <= 768) {
+                setTimeout(() => showMobileTab('info'), 40);
+            }
+        });
+    }
+
+    function syncMobileLabels() {
+        const isEn = document.getElementById('btn-en') && document.getElementById('btn-en').classList.contains('active');
+        document.getElementById('tab-btn-search').textContent = isEn ? '🔍 Search & List' : '🔍 Поиск и список';
+        document.getElementById('tab-btn-info').textContent = isEn ? '📘 Instruction' : '📘 Инструкция';
+        backBtn.textContent = isEn ? '← Back to medicine list' : '← Вернуться к выбору препарата';
+    }
+
+    document.addEventListener('click', () => setTimeout(syncMobileLabels, 30));
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            leftPanel.classList.remove('mob-hidden');
+            rightPanel.classList.remove('mob-hidden');
+        }
+    });
+
+    if (window.innerWidth <= 768) {
+        showMobileTab('search');
+    }
+})();
+</script>
+<script>
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        if (typeof renderApp === 'function') {
+            renderApp();
+        }
+        const allPanels = document.querySelectorAll('.panel');
+        if (window.innerWidth <= 768 && allPanels.length >= 2) {
+            allPanels.item(1).classList.add('mob-hidden');
+            allPanels.item(0).classList.remove('mob-hidden');
+        }
+    }, 300);
+});
+</script>
+<script>
+(function() {
+    function safeSetText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    }
+
+    function safeSetAttr(id, attr, val) {
+        const el = document.getElementById(id);
+        if (el) el.setAttribute(attr, val);
+    }
+
+    window.renderApp = function() {
+        if (typeof medicines === 'undefined' || !medicines.length) return;
+        if (selectedIdx >= medicines.length || selectedIdx < 0) selectedIdx = 0;
+
+        const isEn = (typeof currentLang !== 'undefined' && currentLang === 'en');
+        const lang = isEn ? 'en' : 'ru';
+        const u = (typeof uiText !== 'undefined' && uiText[lang]) ? uiText[lang] : {
+            title: isEn ? "🩺 MedGuide" : "🩺 МедГид",
+            search: isEn ? "🔍 Medicine or symptom..." : "🔍 Препарат или симптом (голова, тошнит, горло)...",
+            infoLabel: isEn ? "📘 Simple Instruction" : "📘 Доступная инструкция",
+            howLabel: isEn ? "💊 How to take properly" : "💊 Как правильно пить"
+        };
+
+        const currentMed = medicines[selectedIdx][lang];
+        const searchEl = document.getElementById('search-box');
+        const rawQuery = searchEl ? searchEl.value : '';
+        const cleanQ = typeof normalizeText === 'function' ? normalizeText(rawQuery).trim() : rawQuery.toLowerCase().trim();
+
+        safeSetText('ui-title', u.title);
+        safeSetAttr('search-box', 'placeholder', u.search);
+        safeSetText('lbl-info', u.infoLabel);
+        safeSetText('lbl-how', u.howLabel);
+        safeSetText('med-name', currentMed.name);
+        safeSetText('med-sub', currentMed.sub);
+        safeSetText('txt-info', currentMed.info);
+        safeSetText('txt-how', currentMed.how);
+
+        const btnRu = document.getElementById('btn-ru');
+        const btnEn = document.getElementById('btn-en');
+        if (btnRu) btnRu.className = 'ctrl-btn' + (!isEn ? ' active' : '');
+        if (btnEn) btnEn.className = 'ctrl-btn' + (isEn ? ' active' : '');
+
+        const tBox = document.getElementById('triage-alert');
+        if (tBox && typeof fullClinicalRules !== 'undefined') {
+            const rule = fullClinicalRules.find(r => r.test.test(rawQuery));
+            if (rule && cleanQ.length >= 2) {
+                tBox.style.display = 'block';
+                tBox.className = 'triage-alert' + (rule.urgent ? ' urgent' : '');
+                tBox.textContent = rule[lang];
+            } else {
+                tBox.style.display = 'none';
+            }
+        }
+
+        const listBox = document.getElementById('med-list');
+        if (!listBox) return;
+        listBox.innerHTML = '';
+        let count = 0;
+
+        medicines.forEach((item, index) => {
+            let isMatch = true;
+            if (cleanQ.length > 0) {
+                if (typeof matchMedicineSmart === 'function') {
+                    isMatch = matchMedicineSmart(item, lang, rawQuery);
+                } else {
+                    const data = item[lang];
+                    const hay = (data.name + ' ' + data.info + ' ' + (item.keys || '')).toLowerCase();
+                    isMatch = hay.includes(cleanQ);
+                }
+            }
+
+            if (isMatch) {
+                count++;
+                const data = item[lang];
+                const btn = document.createElement('button');
+                btn.className = 'med-btn' + (index === selectedIdx ? ' active' : '');
+                const titleHtml = (typeof highlightText === 'function') ? highlightText(data.name, rawQuery) : data.name;
+                btn.innerHTML = '<span>' + titleHtml + '</span><span class="tag">' + data.tag + '</span>';
+                btn.onclick = function() {
+                    selectedIdx = index;
+                    window.renderApp();
+                };
+                listBox.appendChild(btn);
+            }
+        });
+
+        const banner = document.getElementById('symptom-banner');
+        if (banner) {
+            if (cleanQ.length >= 2) {
+                banner.style.display = 'block';
+                banner.textContent = count > 0
+                    ? (isEn ? '🩺 Matches found: ' + count : '🩺 Найдено подходящих средств: ' + count)
+                    : (isEn ? '⚠️ No matches found.' : '⚠️ Ничего не найдено. Попробуйте написать проще (например: голова, горло, живот).');
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+    };
+
+    window.renderApp();
+})();
+</script>
+</body>
+</html>
